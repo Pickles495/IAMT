@@ -1,2 +1,72 @@
-# IAMT
-Integrated AI Math Tutor (Math-Specified is an open-domain, AI-assisted mathematics learning environment. Its primary value is the learning experience: interactive mathematical explanations, autonomous exploration, meaningful practice, conceptual mapping, and reflection on learning over time.)
+# IAMT — Integrated AI Math Tutor
+
+数学を、あなたの問いから。
+
+技術仕様書 V3.0（2026-11-04）に基づく、**日本語UIのインタラクティブな初回ドラフト**です。自由な探索、Tutor + Board、演習、Knowledge Map、Learning Progressの導線を確認するための実装です。本番のAI学習サービスではありません。
+
+## 起動
+
+Node.js 22以上とnpmを用意してください。
+
+```bash
+npm ci
+npm run dev
+```
+
+http://localhost:3000 を開きます。APIキーは不要です。
+
+```bash
+npm run typecheck
+npm test
+npm run build
+npm start
+```
+
+ブラウザテスト:
+
+```bash
+npx playwright install --with-deps chromium
+npm run build
+npm run test:e2e
+```
+
+## 体験できること
+
+| 画面         | 実装済みの操作                                                                                    | 次段階                                          |
+| ------------ | ------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `/learn`     | 解説量の切替、数式Board、追加の問い、自由入力の会話記録、固定デモ応答、トピック保存、演習への移動 | Tutor実AI、生成Board、ストリーミング            |
+| `/exercise`  | トピック選択、固定問題、段階的ヒント、解答例の明示的表示、解答提出・修正、試行記録                | 任意トピックの生成、数式検証、証明へのAI講評    |
+| `/knowledge` | 同一IDのTree/Graph切替、検索、関係の意味の表示、保存、Tutor/演習への移動                          | Organizer提案・承認、ノード生成、個人の配置編集 |
+| `/progress`  | 実際の試行の集計、元の解答の閲覧、保存トピック、架空の解釈表示例と訂正、固定の任意提案と非表示    | 根拠に基づくProgress AI、期間比較、個別提案     |
+| `/settings`  | 表示設定、分析の許可設定、JSONエクスポート、全デモデータの削除                                    | 認証、クラウド保存、保持期間・削除ポリシー      |
+
+地図の6トピックはサンプルであり、プロダクトの対応分野の上限ではありません。自由入力は保存されますが、未接続のAIが質問に答えたように見せることはしません。
+
+## データと評価の範囲
+
+- 記録はこのブラウザの `localStorage` に保存します。サーバーDB・アカウント・複数端末同期はありません。共有端末では同じブラウザの利用者が閲覧できます。
+- 外部モデルや解析サービスへ学習内容を送信しません。Next.js自体の開発用テレメトリーは `NEXT_TELEMETRY_DISABLED=1` で無効化できます。
+- 数値・解集合の照合は固定問題と限定入力形式だけが対象です。対応しない形式や自然言語証明は「自動判定なし」とし、内容の正しさを保証しません。
+- 解答例を表示した後の試行と判定不能の試行は、正答集計の分母から除きます。修正は新しい試行として残ります。
+- AIフィードバックの例は、架空の根拠を明示した表示サンプルです。実際の利用者についての推論ではありません。訂正はデモ用の自己申告として保存します。
+- 分析の許可・パーソナライズの設定は初期値オフ。保存するだけで、処理や外部送信は開始しません。
+- JSONは全デモ記録を書き出します。削除は全デモ記録と設定を初期化します。他端末・ダウンロード済みJSONは削除しません。
+- APIキーや秘密情報をブラウザに保存しないでください。`.env.example` は値を含みません。
+
+## 構成
+
+Next.js App Router / React / TypeScript / KaTeX / Lucide。独自CSSによるレスポンシブUI。日本語フォント（Noto Sans JP）はアプリに同梱し、外部フォント配信に依存しません。数式はKaTeXの `trust: false` で描画し、会話・解答はReactのテキストとして表示します。任意HTMLや生成コードは実行しません。
+
+- `lib/domain.ts`: 共通トピックID、分類・関係、演習、評価、集計、保存データ検証
+- `ai/gateway.ts`: Tutor用の置換可能な契約と固定デモアダプター
+- `components/demo-provider.tsx`: ブラウザ保存と共通設定
+- `docs/architecture.md`: V3との対応と次段階の接続条件
+- `tests/`: 評価・保存・集計の単体テスト、デスクトップ/モバイルの操作テスト
+
+AI接続は認証・入力/出力検証・利用制限を備えたサーバー境界に置きます。現在のデモアダプターをクライアントから直接APIキー付きのモデル呼び出しに差し替えないでください。
+
+## 開発・公開状態
+
+GitHub Actionsは型検査、単体テスト、ビルド、Chromiumによる2画面サイズの操作テストを実行します。ドラフトのためホスティングは設定していません。Draft PRで確認し、AI提供元・認証/DB・ホスティングの選択後に段階的に実接続します。
+
+ライセンスは未設定です。再利用・再配布の許諾は別途確認してください。

@@ -1,0 +1,35 @@
+{
+  "name": "integrated-ai-math-tutor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "format:check": "prettier --check app components lib ai tests docs README.md playwright.config.ts next.config.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/noto-sans-jp": "^5.3.1",
+    "katex": "^0.19.1",
+    "lucide-react": "^0.468.0",
+    "next": "16.4.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/katex": "^0.16.7",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
