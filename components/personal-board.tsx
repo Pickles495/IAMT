@@ -5,6 +5,7 @@ import { useLocale } from "./locale";
 import { MathText } from "./math";
 import "./personal-board.css";
 import { type Note, possibleParents, removeNote } from "@/lib/board-elements";
+import { embeddingSteps } from "@/lib/embedding-lesson";
 type Turn = { question: string; reply: string; example: boolean };
 type Gesture = {
   id?: string;
@@ -126,6 +127,45 @@ export function PersonalBoard({
     ]);
     select(id);
     edit(!text && !tex);
+  }
+  function openLessonStep(index: number, parent?: Note) {
+    const step = embeddingSteps[index];
+    if (!step) return;
+    const existing = notes.find(
+      (n) => n.embeddingStep === index && n.parent === parent?.id,
+    );
+    let note = existing;
+    if (!note) {
+      const x = parent
+        ? parent.x + (parent.width ?? (parent.wide ? 480 : 260)) + 48
+        : 40;
+      const bottom = notes
+        .filter(
+          (n) => n.x < x + 300 && n.x + (n.width ?? (n.wide ? 480 : 260)) > x,
+        )
+        .reduce((max, n) => {
+          const height =
+            Array.from(
+              viewport.current?.querySelectorAll<HTMLElement>("[data-note]") ??
+                [],
+            ).find((el) => el.dataset.note === n.id)?.offsetHeight ?? 220;
+          return Math.max(max, n.y + height + 32);
+        }, parent?.y ?? 40);
+      note = {
+        id: crypto.randomUUID(),
+        embeddingStep: index,
+        text: en ? step.en : step.ja,
+        tex: step.tex,
+        parent: parent?.id,
+        x,
+        y: bottom,
+        width: 300,
+      };
+      change([...notes, note]);
+    }
+    select(note.id);
+    edit(false);
+    move({ x: 16 - note.x * zoom, y: 16 - note.y * zoom });
   }
   async function run(name: string, fn: () => Promise<void>) {
     busy(name);
@@ -268,6 +308,12 @@ export function PersonalBoard({
                   {t("編集", "Edit")}
                 </button>
                 <button
+                  aria-expanded={!active.collapsed}
+                  aria-label={
+                    active.collapsed
+                      ? t("ノートを展開", "Expand note")
+                      : t("ノートを折り畳む", "Collapse note")
+                  }
                   onClick={() =>
                     patch(active.id, { collapsed: !active.collapsed })
                   }
@@ -382,6 +428,17 @@ export function PersonalBoard({
                   tabIndex={0}
                   aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Enter"
                   onKeyDown={(e) => {
+                    if (
+                      e.nativeEvent.isComposing ||
+                      e.nativeEvent.keyCode === 229
+                    )
+                      return;
+                    if (e.key === "Escape" && editing && selected === n.id) {
+                      e.preventDefault();
+                      edit(false);
+                      e.currentTarget.focus();
+                      return;
+                    }
                     if (e.target !== e.currentTarget) return;
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -418,6 +475,7 @@ export function PersonalBoard({
                   {editing && selected === n.id ? (
                     <>
                       <textarea
+                        autoFocus
                         aria-label={t("本文", "Note text")}
                         value={n.text}
                         onChange={(e) => patch(n.id, { text: e.target.value })}
@@ -427,7 +485,12 @@ export function PersonalBoard({
                         value={n.tex ?? ""}
                         onChange={(e) => patch(n.id, { tex: e.target.value })}
                       />
-                      <button onClick={() => edit(false)}>
+                      <button
+                        onClick={(e) => {
+                          edit(false);
+                          e.currentTarget.closest("article")?.focus();
+                        }}
+                      >
                         {t("完了", "Done")}
                       </button>
                     </>
@@ -450,6 +513,33 @@ export function PersonalBoard({
         {tutor && (
           <aside>
             <h3>Tutor</h3>
+            <details className="m2-lesson">
+              <summary>
+                {t(
+                  "固定教材 · 体の埋め込み",
+                  "Worked example · Field embeddings",
+                )}
+              </summary>
+              <button
+                disabled={!rev || !!working}
+                onClick={() => openLessonStep(0)}
+              >
+                {t("定理を開く", "Open theorem")}
+              </button>
+              {active?.embeddingStep !== undefined &&
+                active.embeddingStep < embeddingSteps.length - 1 && (
+                  <button
+                    disabled={!!working}
+                    onClick={() =>
+                      openLessonStep(active.embeddingStep! + 1, active)
+                    }
+                  >
+                    {active.embeddingStep === 0
+                      ? t("導出を開く", "Open derivation")
+                      : t("証明を開く", "Open proof")}
+                  </button>
+                )}
+            </details>
             {turns.map((v, i) => (
               <div className="m2-turn" key={i}>
                 <b>{v.question}</b>

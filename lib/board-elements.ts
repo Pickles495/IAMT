@@ -1,3 +1,4 @@
+import { embeddingSteps } from "./embedding-lesson";
 export type Note = {
   id: string;
   text: string;
@@ -9,6 +10,7 @@ export type Note = {
   collapsed?: boolean;
   topic?: string;
   parent?: string;
+  embeddingStep?: number;
 };
 
 // A parent link represents a branch of the learner's notes.
@@ -51,6 +53,10 @@ export function validBoardElements(value: unknown): value is Note[] {
       return false;
     ids.add(n.id);
     return (
+      (n.embeddingStep === undefined ||
+        (Number.isInteger(n.embeddingStep) &&
+          n.embeddingStep >= 0 &&
+          n.embeddingStep < embeddingSteps.length)) &&
       (n.tex === undefined || typeof n.tex === "string") &&
       (n.parent === undefined || typeof n.parent === "string") &&
       (n.topic === undefined || typeof n.topic === "string") &&

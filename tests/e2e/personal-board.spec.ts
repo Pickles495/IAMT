@@ -64,9 +64,17 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   await expect(page.locator("[data-note]")).toContainText(
     "Fields: what is an embedding?",
   );
-  await page.getByRole("button", { name: "編集", exact: true }).click();
+  const note = page.locator("[data-note]").first();
+  await note.press("Enter");
+  await expect(page.getByLabel("本文")).toBeFocused();
   await page.getByLabel("本文").fill("My question");
-  await page.getByRole("button", { name: "完了" }).click();
+  await page.keyboard.press("Escape");
+  await expect(note).toBeFocused();
+  const startX = await note.evaluate((el) =>
+    parseFloat(getComputedStyle(el).left),
+  );
+  await page.keyboard.press("ArrowRight");
+  await expect(note).toHaveCSS("left", `${startX + 10}px`);
   await page.getByRole("button", { name: /^保存/ }).click();
   await page.getByRole("button", { name: "固定例で操作を試す" }).click();
   await page.getByRole("button", { name: "Boardに反映" }).click();
@@ -83,6 +91,20 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   await open();
   await expect(cards).toHaveCount(2);
   await expect(cards.last()).toContainText("Example roots");
+  await page.getByText("固定教材 · 体の埋め込み").click();
+  await page.getByRole("button", { name: "定理を開く" }).click();
+  await page.getByRole("button", { name: "導出を開く" }).click();
+  await page.getByRole("button", { name: "証明を開く" }).click();
+  await expect(cards).toHaveCount(5);
+  await page.getByRole("button", { name: "ノートを折り畳む" }).click();
+  await page.getByRole("button", { name: /^保存/ }).click();
+  await page.getByRole("button", { name: "← 一覧" }).click();
+  await open();
+  await expect(cards).toHaveCount(5);
+  await expect(cards.last().locator(".math-display")).toHaveCount(0);
+  await cards.last().focus();
+  await page.getByRole("button", { name: "ノートを展開" }).click();
+  await expect(cards.last().locator(".math-display")).toHaveCount(1);
 });
 
 test("tree and map open the same saved board and retain focus", async ({
