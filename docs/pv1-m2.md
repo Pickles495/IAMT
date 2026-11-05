@@ -11,3 +11,5 @@
 OpenAIを使った検証には、サーバー側のPreview変数 `OPENAI_API_KEY`、構造化出力対応の `OPENAI_MODEL`、`PV1_LIVE_TUTOR=1` を設定する。実行は利用費用を承認した後に限る。選択した要素、Boardの抜粋、直近の会話をモデルに送る。提案は採択して保存したときにBoardに反映される。
 
 M2 の画面では各 Board 名に ↗ ボタンが表示される。Board 名がテキストで並んでいる場合は、Vercel の Preview の Source が `pv1/m2-learning` か確認する。
+
+Preview を検証する際は、GitHub で署名が Verified の先頭コミットと Vercel の Source の SHA を照合し、デプロイの Ready を確認してから開く。
