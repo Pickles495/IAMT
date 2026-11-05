@@ -1,4 +1,5 @@
 "use client";
+import { AccountPractice } from "@/components/account-practice";
 import { suggestedTopic } from "@/lib/question-topic";
 import { PersonalBoard } from "@/components/personal-board";
 import { useState } from "react";
@@ -16,6 +17,7 @@ export default function Workspaces() {
     title: string;
     prompt?: string;
   } | null>(null);
+  const [practice, openPractice] = useState(false);
   const [explore, setExplore] = useState(false);
   const [live, setLive] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -92,6 +94,14 @@ export default function Workspaces() {
       wait(false);
     }
   }
+  if (practice && token)
+    return (
+      <AccountPractice
+        token={token}
+        topics={topics}
+        close={() => openPractice(false)}
+      />
+    );
   const boardView =
     board && token ? (
       <PersonalBoard
@@ -161,8 +171,12 @@ export default function Workspaces() {
             >
               {t("知識構造を探索", "Explore knowledge")}
             </button>
+            <button onClick={() => openPractice(true)}>
+              {t("個人演習・学習記録", "My practice and progress")}
+            </button>
             {explore && (
               <PersonalKnowledge
+                token={token}
                 topics={topics}
                 open={(id, title) => openBoard({ id, title })}
               />

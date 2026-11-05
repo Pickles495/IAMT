@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
+import { topics as catalog } from "@/lib/domain";
+import { useEffect, useState } from "react";
 import {
+  type Annotations,
   knowledgeNodes,
   knowledgeNeighbors,
   type WorkspaceTopic,
@@ -11,18 +13,78 @@ import "./personal-knowledge.css";
 
 export function PersonalKnowledge({
   topics,
+  token,
   open,
 }: {
   topics: WorkspaceTopic[];
+  token: string;
   open: (id: string, title: string) => void;
 }) {
   const { en, t } = useLocale();
   const [view, show] = useState<"tree" | "map">("tree"),
     [selected, select] = useState(""),
     [zoom, scale] = useState(1);
-  const nodes = knowledgeNodes(topics);
+  const [annotations, setAnnotations] = useState<Annotations>({
+      classes: [],
+      links: [],
+    }),
+    [problem, notice] = useState(""),
+    [busy, wait] = useState(false);
+  async function request(body?: object) {
+    const r = await fetch("/api/pv1/knowledge", {
+      method: body ? "POST" : "GET",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+    });
+    const d = await r.json();
+    if (!r.ok) throw Error(d.error);
+    return d;
+  }
+  useEffect(() => {
+    let live = true;
+    request()
+      .then((d) => {
+        if (live) setAnnotations(d);
+      })
+      .catch((e) => {
+        if (live) notice(String(e));
+      });
+    return () => {
+      live = false;
+    };
+  }, [token]);
+  async function update(body: object) {
+    wait(true);
+    notice("");
+    try {
+      await request(body);
+      setAnnotations(await request());
+    } catch (e) {
+      notice(String(e));
+    } finally {
+      wait(false);
+    }
+  }
+  const nodes = knowledgeNodes(topics, annotations.classes);
   const focus = nodes.find((n) => n.id === selected) ?? nodes[0];
-  const neighbors = knowledgeNeighbors(nodes, focus.id);
+  const personalLinks = annotations.links.filter(
+    (x) => x.source === focus.id || x.target === focus.id,
+  );
+  const personalNeighbors = personalLinks.flatMap((x) => {
+    const outgoing = x.source === focus.id;
+    const node = nodes.find((n) => n.id === (outgoing ? x.target : x.source));
+    return node
+      ? [{ node, outgoing, label: x.kind, explanation: x.rationale }]
+      : [];
+  });
+  const neighbors = [
+    ...knowledgeNeighbors(nodes, focus.id),
+    ...personalNeighbors,
+  ];
   const name = (n: typeof focus) =>
     n.topic?.name ?? (en ? n.concept!.english : n.concept!.label);
   const label = (n: typeof focus) => {
@@ -121,7 +183,7 @@ export function PersonalKnowledge({
                 <svg width="560" height={height} aria-hidden="true">
                   {neighbors.map(({ node }, i) => (
                     <line
-                      key={node.id}
+                      key={node.id + "-" + i}
                       x1="162"
                       y1={height / 2}
                       x2="398"
@@ -133,14 +195,21 @@ export function PersonalKnowledge({
                   {label(focus)}
                 </strong>
                 {neighbors.map(({ node, label: kind, outgoing }, i) => (
-                  <div key={node.id}>
+                  <div key={node.id + "-" + i}>
                     <span
                       style={{
                         left: 204,
                         top: (height / 2 + ((i + 0.5) * height) / rows) / 2,
                       }}
                     >
-                      {outgoing ? "→" : "←"} {en ? relationLabels[kind] : kind}
+                      {outgoing ? "→" : "←"}{" "}
+                      {kind === "related"
+                        ? t("個人・関連", "Personal · related")
+                        : kind === "requires"
+                          ? t("個人・前提", "Personal · requires")
+                          : en
+                            ? relationLabels[kind]
+                            : kind}
                     </span>
                     <button
                       style={{ left: 396, top: ((i + 0.5) * height) / rows }}
@@ -183,6 +252,98 @@ export function PersonalKnowledge({
             ))}
           </div>
         )}
+        {focus.topic && (
+          <details key={focus.id}>
+            <summary>
+              {t("分類・関係を編集", "Edit classification and links")}
+            </summary>
+            <label>
+              {t("対応する概念", "Reference concept")}
+              <select
+                disabled={busy}
+                value={
+                  annotations.classes.find((c) => c.topic_id === focus.id)
+                    ?.concept ?? ""
+                }
+                onChange={(e) =>
+                  void update({
+                    action: e.target.value ? "classify" : "reset",
+                    source: focus.id,
+                    concept: e.target.value,
+                  })
+                }
+              >
+                <option value="">{t("名前から判定", "Match by name")}</option>
+                {catalog.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {en ? c.english : c.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {topics.length > 1 && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const f = new FormData(e.currentTarget);
+                  void update({
+                    action: "link",
+                    source: focus.id,
+                    target: f.get("target"),
+                    kind: f.get("kind"),
+                    rationale: f.get("reason"),
+                  });
+                }}
+              >
+                <select
+                  aria-label={t("関係の種類", "Relation type")}
+                  name="kind"
+                >
+                  <option value="related">{t("関連する", "Related to")}</option>
+                  <option value="requires">
+                    {t("前提として必要とする", "Requires")}
+                  </option>
+                </select>
+                <select
+                  name="target"
+                  aria-label={t("関連先のTopic", "Related topic")}
+                >
+                  {nodes
+                    .filter((n) => n.topic && n.id !== focus.id)
+                    .map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {label(n)}
+                      </option>
+                    ))}
+                </select>
+                <input
+                  name="reason"
+                  placeholder={t("理由（任意）", "Reason (optional)")}
+                  aria-label={t("関係の理由", "Reason for link")}
+                  maxLength={500}
+                />
+                <button disabled={busy}>{t("関係を保存", "Save link")}</button>
+              </form>
+            )}
+            {personalLinks.map((x) => (
+              <p key={x.source + x.target + x.kind}>
+                {topics.find((t) => t.id === x.source)?.name} →{" "}
+                {topics.find((t) => t.id === x.target)?.name} ·{" "}
+                {x.kind === "requires"
+                  ? t("前提", "Requires")
+                  : t("関連", "Related")}{" "}
+                {x.rationale}
+                <button
+                  disabled={busy}
+                  onClick={() => void update({ ...x, action: "unlink" })}
+                >
+                  {t("接続を解除", "Remove link")}
+                </button>
+              </p>
+            ))}
+          </details>
+        )}
+        {problem && <p role="status">{problem}</p>}
       </div>
     </section>
   );

@@ -88,6 +88,9 @@ test("personal board can apply a labelled example, undo and restore saved notes"
 test("tree and map open the same saved board and retain focus", async ({
   page,
 }) => {
+  await page.route("**/api/pv1/knowledge", (r) =>
+    r.fulfill({ json: { classes: [], links: [] } }),
+  );
   const topic = {
     id: "galois-private",
     name: "ガロア理論",

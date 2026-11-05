@@ -7,12 +7,22 @@ export type WorkspaceTopic = {
   pv_conversations: { id: string; title: string }[];
 };
 const normalize = (s: string) => s.normalize("NFKC").trim().toLowerCase();
-export function knowledgeNodes(saved: WorkspaceTopic[]) {
+export type Annotations = {
+  classes: { topic_id: string; concept: string }[];
+  links: { source: string; target: string; kind: string; rationale: string }[];
+};
+export function knowledgeNodes(
+  saved: WorkspaceTopic[],
+  classes: Annotations["classes"] = [],
+) {
   const mapped = saved.map((topic) => {
     const key = normalize(topic.name);
-    const concept = catalog.find((c) =>
-      [c.label, c.english, c.id].some((alias) => normalize(alias) === key),
-    );
+    const explicit = classes.find((c) => c.topic_id === topic.id);
+    const concept =
+      catalog.find((c) => c.id === explicit?.concept) ??
+      catalog.find((c) =>
+        [c.label, c.english, c.id].some((alias) => normalize(alias) === key),
+      );
     return {
       id: topic.id,
       topic,
