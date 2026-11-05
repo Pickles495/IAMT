@@ -21,6 +21,9 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
     await db.exec(
       readFileSync("supabase/migrations/202611050004_board_turns.sql", "utf8"),
     );
+    await db.exec(
+      readFileSync("supabase/migrations/202611050005_practice.sql", "utf8"),
+    );
     const a = crypto.randomUUID(),
       b = crypto.randomUUID(),
       id = crypto.randomUUID();
@@ -61,7 +64,54 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
       "insert into pv_board_turns(board_id,question,reply,example) values($1,'question','reply',true)",
       [board.id],
     );
+    const pack = crypto.randomUUID(),
+      attempt = crypto.randomUUID();
+    const createPack = (ownerTopic: string) =>
+      db.query("select pv_create_practice($1,'Study',$2,$3)", [
+        pack,
+        [ownerTopic],
+        '["slope-v1"]',
+      ]);
+    const submit = (answer: string) =>
+      db.query("select pv_submit_practice($1,$2,'slope-v1',$3,false)", [
+        attempt,
+        pack,
+        answer,
+      ]);
+    await createPack(id);
+    await createPack(id);
+    await submit("6");
+    await submit("6");
+    assert.equal((await db.query("select * from pv_attempts")).rows.length, 1);
+    await assert.rejects(submit("7"));
+    const secondTopic = crypto.randomUUID();
+    await db.query("insert into pv_topics(id,name) values($1,'Other')", [
+      secondTopic,
+    ]);
+    await db.query(
+      "insert into pv_classifications(topic_id,concept) values($1,'fields')",
+      [id],
+    );
+    await db.query(
+      "insert into pv_relations(source,target,kind) values($1,$2,'requires')",
+      [id, secondTopic],
+    );
+    await assert.rejects(
+      db.query(
+        "insert into pv_relations(source,target,kind) values($1,$2,'requires')",
+        [secondTopic, id],
+      ),
+    );
     await login(b);
+    assert.equal(
+      (await db.query("select * from pv_classifications")).rows.length,
+      0,
+    );
+    assert.equal((await db.query("select * from pv_relations")).rows.length, 0);
+    await assert.rejects(createPack(id));
+    await assert.rejects(submit("6"));
+    assert.equal((await db.query("select * from pv_packages")).rows.length, 0);
+    assert.equal((await db.query("select * from pv_attempts")).rows.length, 0);
     assert.equal(
       (await db.query("select * from pv_board_turns")).rows.length,
       0,
@@ -88,7 +138,11 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
     );
     await login(a);
     assert.deepEqual(
-      (await db.query("select name,revision from pv_topics")).rows,
+      (
+        await db.query(
+          "select name,revision from pv_topics where name='Fields'",
+        )
+      ).rows,
       [{ name: "Fields", revision: 2 }],
     );
     assert.deepEqual(
@@ -110,7 +164,7 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
         ).rows[0].ok,
         expected,
       );
-    assert.equal((await db.query("select * from pv_boards")).rows.length, 3);
+    assert.equal((await db.query("select * from pv_boards")).rows.length, 4);
   } finally {
     await db.close();
   }

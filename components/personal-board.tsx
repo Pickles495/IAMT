@@ -380,6 +380,30 @@ export function PersonalBoard({
               {notes.map((n) => (
                 <article
                   tabIndex={0}
+                  aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Enter"
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      select(n.id);
+                      edit(true);
+                      return;
+                    }
+                    const steps: Record<string, [number, number]> = {
+                      ArrowUp: [0, -1],
+                      ArrowDown: [0, 1],
+                      ArrowLeft: [-1, 0],
+                      ArrowRight: [1, 0],
+                    };
+                    const step = steps[e.key];
+                    if (!step) return;
+                    e.preventDefault();
+                    const distance = e.shiftKey ? 50 : 10;
+                    patch(n.id, {
+                      x: n.x + distance * step[0],
+                      y: n.y + distance * step[1],
+                    });
+                  }}
                   onFocus={() => select(n.id)}
                   data-note={n.id}
                   key={n.id}
