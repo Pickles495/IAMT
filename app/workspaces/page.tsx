@@ -1,4 +1,5 @@
 "use client";
+import { PersonalBoard } from "@/components/personal-board";
 import { useState } from "react";
 import { useLocale } from "@/components/locale";
 type Topic = {
@@ -14,6 +15,9 @@ export default function Workspaces() {
     [topics, list] = useState<Topic[]>([]),
     [msg, notice] = useState(""),
     [busy, wait] = useState(false);
+  const [board, openBoard] = useState<{ id: string; title: string } | null>(
+    null,
+  );
   async function request(key: string, body?: object) {
     const r = await fetch("/api/pv1", {
       method: body ? "POST" : "GET",
@@ -38,6 +42,16 @@ export default function Workspaces() {
       wait(false);
     }
   }
+  if (board && token)
+    return (
+      <PersonalBoard
+        key={board.id}
+        boardId={board.id}
+        title={board.title}
+        token={token}
+        close={() => openBoard(null)}
+      />
+    );
   return (
     <section className="pv-core">
       <h1>{t("個人ワークスペース", "Personal workspace")}</h1>
@@ -136,7 +150,19 @@ export default function Workspaces() {
                 <>
                   <h2>{topic.name}</h2>
                   <p>
-                    Board · {topic.pv_boards.map((x) => x.title).join(", ")}
+                    {topic.pv_boards.map((x) => (
+                      <button
+                        key={x.id}
+                        onClick={() =>
+                          openBoard({
+                            id: x.id,
+                            title: topic.name + " · " + x.title,
+                          })
+                        }
+                      >
+                        {x.title} ↗
+                      </button>
+                    ))}
                   </p>
                   <p>
                     Tutor ·{" "}

@@ -1,0 +1,122 @@
+.m2 {
+  max-width: 100%;
+  color: var(--ink, #222);
+}
+.m2 header,
+.m2-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  padding: 0.5rem;
+}
+.m2 header h2 {
+  flex: 1;
+  font-size: 1.1rem;
+}
+.m2 button {
+  background: white;
+  border: 1px solid #bbb;
+  border-radius: 0.45rem;
+  padding: 0.4rem 0.65rem;
+  color: #222;
+}
+.m2 button:disabled {
+  opacity: 0.45;
+}
+.m2-layout {
+  display: flex;
+  min-height: 65vh;
+  border: 1px solid #ccc;
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+.m2-layout main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.m2-layout aside {
+  width: min(34%, 23rem);
+  padding: 1rem;
+  overflow: auto;
+  max-height: 75vh;
+  border-left: 1px solid #ccc;
+  background: white;
+}
+.m2 aside small,
+.m2 aside textarea {
+  display: block;
+  margin: 0.55rem 0;
+}
+.m2-view {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-height: 50vh;
+  touch-action: none;
+  background-color: #fafafa;
+  background-image: radial-gradient(#ccc 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.m2-world {
+  position: absolute;
+  transform-origin: 0 0;
+}
+.m2-world svg {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+  color: #999;
+}
+.m2-world article {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: grab;
+  min-height: 3rem;
+}
+.m2-world article.chosen {
+  outline: 2px solid #333;
+}
+.m2 textarea {
+  width: 100%;
+  min-height: 3rem;
+  color: #222;
+  background: white;
+}
+.m2-world i {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 15px;
+  height: 15px;
+  border-right: 3px solid #777;
+  border-bottom: 3px solid #777;
+  cursor: ew-resize;
+}
+.m2-turn,
+.m2-offer {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #ddd;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 720px) {
+  .m2-layout {
+    display: block;
+  }
+  .m2-layout aside {
+    width: 100%;
+    max-height: 40vh;
+    border-left: 0;
+    border-top: 1px solid #ccc;
+  }
+}

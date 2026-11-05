@@ -18,6 +18,9 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
     await db.exec(
       readFileSync("supabase/migrations/202611050003_board_edits.sql", "utf8"),
     );
+    await db.exec(
+      readFileSync("supabase/migrations/202611050004_board_turns.sql", "utf8"),
+    );
     const a = crypto.randomUUID(),
       b = crypto.randomUUID(),
       id = crypto.randomUUID();
@@ -54,7 +57,22 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
       );
     assert.equal(Number((await save(1, "learner edit")).rows[0].result), 2);
     assert.equal((await save(1, "stale tutor edit")).rows[0].result, null);
+    await db.query(
+      "insert into pv_board_turns(board_id,question,reply,example) values($1,'question','reply',true)",
+      [board.id],
+    );
     await login(b);
+    assert.equal(
+      (await db.query("select * from pv_board_turns")).rows.length,
+      0,
+    );
+    await assert.rejects(
+      db.query(
+        "insert into pv_board_turns(board_id,question,reply) values($1,'q','r')",
+        [board.id],
+      ),
+    );
+
     assert.equal((await save(2, "another user")).rows[0].result, null);
     for (const table of [
       "pv_topics",
