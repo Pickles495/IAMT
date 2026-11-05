@@ -29,11 +29,13 @@ export function PersonalBoard({
   boardId,
   title,
   token,
+  initialPrompt,
   close,
 }: {
   boardId: string;
   title: string;
   token: string;
+  initialPrompt?: string;
   close: () => void;
 }) {
   const { en, t } = useLocale();
@@ -45,7 +47,7 @@ export function PersonalBoard({
   const [selected, select] = useState(""),
     [pan, move] = useState({ x: 32, y: 32 }),
     [zoom, scale] = useState(1);
-  const [input, question] = useState(""),
+  const [input, question] = useState(initialPrompt ?? ""),
     [turns, history] = useState<Turn[]>([]),
     [live, setLive] = useState(false);
   const [pending, suggest] = useState<{ p: Proposal; target?: Note } | null>(
@@ -58,7 +60,7 @@ export function PersonalBoard({
   const gesture = useRef<Gesture | null>(null),
     viewport = useRef<HTMLDivElement>(null);
   const active = notes.find((n) => n.id === selected),
-    dirty = notes !== saved;
+    dirty = rev > 0 && notes !== saved;
   async function request(action: string, extra: object = {}) {
     const r = await fetch("/api/pv1/board", {
       method: "POST",
@@ -77,7 +79,19 @@ export function PersonalBoard({
     request("open")
       .then((d) => {
         if (current) {
-          setNotes(d.elements);
+          if (initialPrompt) {
+            const id = crypto.randomUUID();
+            const y =
+              d.elements.reduce(
+                (max: number, n: Note) =>
+                  Math.max(max, Number.isFinite(n.y) ? n.y : 0),
+                -180,
+              ) + 220;
+            setNotes([...d.elements, { id, text: initialPrompt, x: 40, y }]);
+            undoStack([d.elements]);
+            select(id);
+            move({ x: 0, y: 40 - y });
+          } else setNotes(d.elements);
           setSaved(d.elements);
           revision(d.revision);
           history(d.history);
@@ -90,7 +104,7 @@ export function PersonalBoard({
     return () => {
       current = false;
     };
-  }, [boardId, token]);
+  }, [boardId, token, initialPrompt]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();

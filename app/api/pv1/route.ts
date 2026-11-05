@@ -1,3 +1,4 @@
+import { inferTopic } from "@/ai/board-tutor";
 import { NextRequest } from "next/server";
 const error = (message: string, status: number) =>
   Response.json({ error: message }, { status });
@@ -27,6 +28,41 @@ async function handle(req: NextRequest) {
       "/rest/v1/pv_topics?select=id,name,revision,locale,pv_boards(id,title),pv_conversations(id,title)&order=name";
     let method = "GET",
       data;
+    const model = process.env.OPENAI_MODEL,
+      apiKey = process.env.OPENAI_API_KEY;
+    const live = process.env.PV1_LIVE_TUTOR === "1" && !!model && !!apiKey;
+    if (body.action === "suggestTopic") {
+      if (!live || !model || !apiKey)
+        return error("Live Tutor is disabled", 503);
+      if (
+        typeof body.question !== "string" ||
+        !body.question.trim() ||
+        body.question.length > 3000
+      )
+        return error("Invalid question", 400);
+      const owner = await fetch(new URL("/auth/v1/user", base), {
+        headers,
+        cache: "no-store",
+      });
+      if (!owner.ok) return error("Sign in required", 401);
+      const topics = await fetch(
+        new URL("/rest/v1/pv_topics?select=name&order=name&limit=80", base),
+        { headers, cache: "no-store" },
+      );
+      if (!topics.ok) return error("Topic lookup failed", topics.status);
+      try {
+        const name = await inferTopic(
+          body.question,
+          (await topics.json()).map((t: { name: string }) => t.name),
+          body.locale === "en" ? "en" : "ja",
+          apiKey,
+          model,
+        );
+        return Response.json({ name });
+      } catch {
+        return error("Topic suggestion unavailable", 502);
+      }
+    }
     if (login) {
       path = "/auth/v1/token?grant_type=password";
       method = "POST";
@@ -73,9 +109,12 @@ async function handle(req: NextRequest) {
     const result = await r.json();
     if (method === "PATCH" && !result.length)
       return error("Topic changed or unavailable", 409);
-    return Response.json(login ? { token: result.access_token } : result, {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return Response.json(
+      login ? { token: result.access_token, live } : result,
+      {
+        headers: { "Cache-Control": "no-store" },
+      },
+    );
   } catch {
     return error("Invalid request or unavailable service", 400);
   }
