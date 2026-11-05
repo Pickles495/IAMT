@@ -17,4 +17,10 @@ export const embeddingSteps = [
     en: "Each element has a unique expression a+b√2. Each sign gives a map preserving sums and products, with an inverse. Both candidates are realized.",
     tex: String.raw`a+b\sqrt2\longmapsto a\pm b\sqrt2\quad(a,b\in\mathbb Q)`,
   },
+  {
+    role: "example",
+    ja: "元 1+√2 を選ぶ。二つの写像は有理数 1 を固定するが、√2 の符号の選択によって異なる像を与える。",
+    en: "Take the element 1+√2. Both maps fix the rational number 1, but their choices of sign for √2 give different images.",
+    tex: String.raw`\begin{aligned}\sigma_{+}(1+\sqrt2)&=1+\sqrt2\\\sigma_{-}(1+\sqrt2)&=1-\sqrt2\end{aligned}`,
+  },
 ] as const;
