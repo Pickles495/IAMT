@@ -1938,27 +1938,3 @@ footer {
 .v4-toolbar select {
   max-width: 100%;
 }
-.pv-core {
-  --pv-space: 1rem;
-  --pv-line: #d4d4d4;
-  max-width: 54rem;
-  color: #222;
-}
-.pv-core article,
-.pv-core form {
-  padding-block: var(--pv-space);
-}
-.pv-core article {
-  border-top: 1px solid var(--pv-line);
-}
-.pv-core form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-.pv-core button {
-  background: #252525;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-}
