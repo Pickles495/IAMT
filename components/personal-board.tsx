@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from "react";
 import type { Proposal } from "@/ai/board-tutor";
 import { useLocale } from "./locale";
+import { ChevronRight } from "lucide-react";
+import { BoardReading } from "./board-reading";
 import { MathText } from "./math";
 import "./personal-board.css";
 import { type Note, possibleParents, removeNote } from "@/lib/board-elements";
@@ -51,6 +53,22 @@ export function PersonalBoard({
     viewport = useRef<HTMLDivElement>(null);
   const active = notes.find((n) => n.id === selected),
     dirty = rev > 0 && notes !== saved;
+  const [readingId, read] = useState("");
+  const reading = notes.find((n) => n.id === readingId);
+  const returnTo = useRef<HTMLButtonElement | null>(null);
+  function beginReading(id: string) {
+    returnTo.current =
+      document.activeElement instanceof HTMLButtonElement
+        ? document.activeElement
+        : null;
+    edit(false);
+    read(id);
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLButtonElement>(".board-reading > button")
+        ?.focus(),
+    );
+  }
   async function request(action: string, extra: object = {}) {
     const r = await fetch("/api/pv1/board", {
       method: "POST",
@@ -163,9 +181,7 @@ export function PersonalBoard({
       };
       change([...notes, note]);
     }
-    select(note.id);
-    edit(false);
-    move({ x: 16 - note.x * zoom, y: 16 - note.y * zoom });
+    if (!parent) beginReading(note.id);
   }
   async function run(name: string, fn: () => Promise<void>) {
     busy(name);
@@ -230,316 +246,329 @@ export function PersonalBoard({
           {t("保存", "Save")}
           {dirty ? " *" : ""}
         </button>
-        <button aria-expanded={tutor} onClick={() => show(!tutor)}>
+        <button
+          hidden={!!reading}
+          aria-expanded={tutor}
+          onClick={() => show(!tutor)}
+        >
           Tutor
         </button>
       </header>
       <div className="m2-layout">
         <main>
-          <div className="m2-tools">
-            <button disabled={!rev} onClick={() => add()}>
-              {t("＋ ノート", "+ Note")}
-            </button>
-            <button
-              disabled={!past.length}
-              onClick={() => {
-                redoStack([...future, notes]);
-                setNotes(past.at(-1)!);
-                undoStack(past.slice(0, -1));
-              }}
-            >
-              ↶ Undo
-            </button>
-            <button
-              disabled={!future.length}
-              onClick={() => {
-                undoStack([...past, notes]);
-                setNotes(future.at(-1)!);
-                redoStack(future.slice(0, -1));
-              }}
-            >
-              ↷ Redo
-            </button>
-            <button
-              aria-label="Zoom out"
-              onClick={() => scale(Math.max(0.35, zoom - 0.15))}
-            >
-              −
-            </button>
-            <button
-              aria-label="Reset view"
-              onClick={() => {
-                move({ x: 32, y: 32 });
-                scale(1);
-              }}
-            >
-              {Math.round(zoom * 100)}%
-            </button>
-            <button
-              aria-label="Zoom in"
-              onClick={() => scale(Math.min(2.5, zoom + 0.15))}
-            >
-              +
-            </button>
-            {active && (
-              <>
-                {notes.length > 1 && (
-                  <label>
-                    {t("接続元", "Connect from")}{" "}
-                    <select
-                      aria-label={t("接続元のノート", "Parent note")}
-                      value={active.parent ?? ""}
-                      onChange={(e) =>
-                        patch(active.id, {
-                          parent: e.target.value || undefined,
-                        })
-                      }
-                    >
-                      <option value="">{t("なし", "None")}</option>
-                      {possibleParents(notes, active.id).map((n) => (
-                        <option key={n.id} value={n.id}>
-                          {(n.text || n.tex || n.topic || n.id).slice(0, 48)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <button onClick={() => edit(!editing)}>
-                  {t("編集", "Edit")}
-                </button>
-                <button
-                  aria-expanded={!active.collapsed}
-                  aria-label={
-                    active.collapsed
-                      ? t("ノートを展開", "Expand note")
-                      : t("ノートを折り畳む", "Collapse note")
-                  }
-                  onClick={() =>
-                    patch(active.id, { collapsed: !active.collapsed })
-                  }
-                >
-                  {active.collapsed ? "▾" : "▴"}
-                </button>
-                <button
-                  onClick={() => {
-                    change(removeNote(notes, selected));
-                    select("");
-                  }}
-                >
-                  {t("削除", "Delete")}
-                </button>
-              </>
-            )}
-          </div>
-          <div
-            className="m2-view"
-            ref={viewport}
-            onPointerDown={(e) => {
-              if (
-                e.button !== 0 ||
-                (e.target as Element).closest("textarea,button")
-              )
-                return;
-              const el = (e.target as Element).closest<HTMLElement>(
-                "[data-note]",
-              );
-              const n = notes.find((v) => v.id === el?.dataset.note);
-              if (n) {
-                select(n.id);
-                if (n.id !== selected) edit(false);
-              } else {
-                select("");
-                edit(false);
-              }
-              const resize = (e.target as Element).hasAttribute("data-resize");
-              gesture.current = {
-                id: n?.id,
-                resize,
-                sx: e.clientX,
-                sy: e.clientY,
-                x: resize ? (n?.width ?? 260) : (n?.x ?? pan.x),
-                y: n?.y ?? pan.y,
-              };
-              if (n) checkpoint();
-              e.currentTarget.setPointerCapture(e.pointerId);
-            }}
-            onPointerMove={(e) => {
-              const g = gesture.current;
-              if (!g) return;
-              const dx = e.clientX - g.sx,
-                dy = e.clientY - g.sy;
-              if (!dx && !dy) return;
-              if (!g.id) move({ x: g.x + dx, y: g.y + dy });
-              else
-                setNotes((ns) =>
-                  ns.map((n) =>
-                    n.id === g.id
-                      ? {
-                          ...n,
-                          ...(g.resize
-                            ? {
-                                width: Math.max(
-                                  160,
-                                  Math.min(800, g.x + dx / zoom),
-                                ),
-                              }
-                            : { x: g.x + dx / zoom, y: g.y + dy / zoom }),
-                        }
-                      : n,
-                  ),
+          {reading && (
+            <BoardReading
+              root={reading}
+              notes={notes}
+              reveal={openLessonStep}
+              toggle={(n) => patch(n.id, { collapsed: !n.collapsed })}
+              close={() => {
+                read("");
+                requestAnimationFrame(() =>
+                  returnTo.current?.focus({ preventScroll: true }),
                 );
-            }}
-            onLostPointerCapture={() => {
-              gesture.current = null;
-            }}
-          >
+              }}
+            />
+          )}
+          <div className="board-canvas-surface" hidden={!!reading}>
+            <div className="m2-tools">
+              <button disabled={!rev} onClick={() => openLessonStep(0)}>
+                {t("教材 · 体の埋め込み", "Lesson · Field embeddings")}
+              </button>
+              <button disabled={!rev} onClick={() => add()}>
+                {t("＋ ノート", "+ Note")}
+              </button>
+              <button
+                disabled={!past.length}
+                onClick={() => {
+                  redoStack([...future, notes]);
+                  setNotes(past.at(-1)!);
+                  undoStack(past.slice(0, -1));
+                }}
+              >
+                ↶ Undo
+              </button>
+              <button
+                disabled={!future.length}
+                onClick={() => {
+                  undoStack([...past, notes]);
+                  setNotes(future.at(-1)!);
+                  redoStack(future.slice(0, -1));
+                }}
+              >
+                ↷ Redo
+              </button>
+              <button
+                aria-label="Zoom out"
+                onClick={() => scale(Math.max(0.35, zoom - 0.15))}
+              >
+                −
+              </button>
+              <button
+                aria-label="Reset view"
+                onClick={() => {
+                  move({ x: 32, y: 32 });
+                  scale(1);
+                }}
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              <button
+                aria-label="Zoom in"
+                onClick={() => scale(Math.min(2.5, zoom + 0.15))}
+              >
+                +
+              </button>
+              {active && (
+                <>
+                  {notes.length > 1 && (
+                    <label>
+                      {t("接続元", "Connect from")}{" "}
+                      <select
+                        aria-label={t("接続元のノート", "Parent note")}
+                        value={active.parent ?? ""}
+                        onChange={(e) =>
+                          patch(active.id, {
+                            parent: e.target.value || undefined,
+                          })
+                        }
+                      >
+                        <option value="">{t("なし", "None")}</option>
+                        {possibleParents(notes, active.id).map((n) => (
+                          <option key={n.id} value={n.id}>
+                            {(n.text || n.tex || n.topic || n.id).slice(0, 48)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  <button onClick={() => beginReading(active.id)}>
+                    {t("つながりを読む", "Read connected notes")}
+                  </button>
+                  <button onClick={() => edit(!editing)}>
+                    {t("編集", "Edit")}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      change(removeNote(notes, selected));
+                      select("");
+                    }}
+                  >
+                    {t("削除", "Delete")}
+                  </button>
+                </>
+              )}
+            </div>
             <div
-              className="m2-world"
-              style={{
-                transform:
-                  "translate(" +
-                  pan.x +
-                  "px," +
-                  pan.y +
-                  "px) scale(" +
-                  zoom +
-                  ")",
+              className="m2-view"
+              ref={viewport}
+              onPointerDown={(e) => {
+                if (
+                  e.button !== 0 ||
+                  (e.target as Element).closest("textarea,button")
+                )
+                  return;
+                const el = (e.target as Element).closest<HTMLElement>(
+                  "[data-note]",
+                );
+                const n = notes.find((v) => v.id === el?.dataset.note);
+                if (n) {
+                  select(n.id);
+                  if (n.id !== selected) edit(false);
+                } else {
+                  select("");
+                  edit(false);
+                }
+                const resize = (e.target as Element).hasAttribute(
+                  "data-resize",
+                );
+                gesture.current = {
+                  id: n?.id,
+                  resize,
+                  sx: e.clientX,
+                  sy: e.clientY,
+                  x: resize ? (n?.width ?? 260) : (n?.x ?? pan.x),
+                  y: n?.y ?? pan.y,
+                };
+                if (n) checkpoint();
+                e.currentTarget.setPointerCapture(e.pointerId);
+              }}
+              onPointerMove={(e) => {
+                const g = gesture.current;
+                if (!g) return;
+                const dx = e.clientX - g.sx,
+                  dy = e.clientY - g.sy;
+                if (!dx && !dy) return;
+                if (!g.id) move({ x: g.x + dx, y: g.y + dy });
+                else
+                  setNotes((ns) =>
+                    ns.map((n) =>
+                      n.id === g.id
+                        ? {
+                            ...n,
+                            ...(g.resize
+                              ? {
+                                  width: Math.max(
+                                    160,
+                                    Math.min(800, g.x + dx / zoom),
+                                  ),
+                                }
+                              : { x: g.x + dx / zoom, y: g.y + dy / zoom }),
+                          }
+                        : n,
+                    ),
+                  );
+              }}
+              onLostPointerCapture={() => {
+                gesture.current = null;
               }}
             >
-              <svg aria-hidden="true">
-                {notes.map((n) => {
-                  const from = notes.find((k) => k.id === n.parent);
-                  return (
-                    from && (
-                      <line
-                        key={n.id}
-                        x1={from.x + 130}
-                        y1={from.y + 30}
-                        x2={n.x + 130}
-                        y2={n.y + 30}
-                        stroke="currentColor"
-                      />
-                    )
-                  );
-                })}
-              </svg>
-              {notes.map((n) => (
-                <article
-                  tabIndex={0}
-                  aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Enter"
-                  onKeyDown={(e) => {
-                    if (
-                      e.nativeEvent.isComposing ||
-                      e.nativeEvent.keyCode === 229
-                    )
-                      return;
-                    if (e.key === "Escape" && editing && selected === n.id) {
+              <div
+                className="m2-world"
+                style={{
+                  transform:
+                    "translate(" +
+                    pan.x +
+                    "px," +
+                    pan.y +
+                    "px) scale(" +
+                    zoom +
+                    ")",
+                }}
+              >
+                <svg aria-hidden="true">
+                  {notes.map((n) => {
+                    const from = notes.find((k) => k.id === n.parent);
+                    return (
+                      from && (
+                        <line
+                          key={n.id}
+                          x1={from.x + 130}
+                          y1={from.y + 30}
+                          x2={n.x + 130}
+                          y2={n.y + 30}
+                          stroke="currentColor"
+                        />
+                      )
+                    );
+                  })}
+                </svg>
+                {notes.map((n) => (
+                  <article
+                    tabIndex={0}
+                    aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Enter"
+                    onKeyDown={(e) => {
+                      if (
+                        e.nativeEvent.isComposing ||
+                        e.nativeEvent.keyCode === 229
+                      )
+                        return;
+                      if (e.key === "Escape" && editing && selected === n.id) {
+                        e.preventDefault();
+                        edit(false);
+                        e.currentTarget.focus();
+                        return;
+                      }
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        select(n.id);
+                        edit(true);
+                        return;
+                      }
+                      const steps: Record<string, [number, number]> = {
+                        ArrowUp: [0, -1],
+                        ArrowDown: [0, 1],
+                        ArrowLeft: [-1, 0],
+                        ArrowRight: [1, 0],
+                      };
+                      const step = steps[e.key];
+                      if (!step) return;
                       e.preventDefault();
-                      edit(false);
-                      e.currentTarget.focus();
-                      return;
-                    }
-                    if (e.target !== e.currentTarget) return;
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      select(n.id);
-                      edit(true);
-                      return;
-                    }
-                    const steps: Record<string, [number, number]> = {
-                      ArrowUp: [0, -1],
-                      ArrowDown: [0, 1],
-                      ArrowLeft: [-1, 0],
-                      ArrowRight: [1, 0],
-                    };
-                    const step = steps[e.key];
-                    if (!step) return;
-                    e.preventDefault();
-                    const distance = e.shiftKey ? 50 : 10;
-                    patch(n.id, {
-                      x: n.x + distance * step[0],
-                      y: n.y + distance * step[1],
-                    });
-                  }}
-                  onFocus={() => select(n.id)}
-                  data-note={n.id}
-                  key={n.id}
-                  aria-label={n.text || t("ノート", "Note")}
-                  className={n.id === selected ? "chosen" : ""}
-                  style={{
-                    left: n.x,
-                    top: n.y,
-                    width: n.width ?? (n.wide ? 480 : 260),
-                  }}
-                >
-                  {editing && selected === n.id ? (
-                    <>
-                      <textarea
-                        autoFocus
-                        aria-label={t("本文", "Note text")}
-                        value={n.text}
-                        onChange={(e) => patch(n.id, { text: e.target.value })}
-                      />
-                      <textarea
-                        aria-label={t("数式", "Formula")}
-                        value={n.tex ?? ""}
-                        onChange={(e) => patch(n.id, { tex: e.target.value })}
-                      />
-                      <button
-                        onClick={(e) => {
-                          edit(false);
-                          e.currentTarget.closest("article")?.focus();
-                        }}
-                      >
-                        {t("完了", "Done")}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {n.collapsed
-                        ? (n.text || n.tex || "…").slice(0, 35)
-                        : n.text ||
-                          n.topic ||
-                          (!n.tex ? t("ノート", "Note") : "")}
-                      {!n.collapsed && n.tex && <MathText tex={n.tex} />}
-                    </>
-                  )}
-                  <i data-resize aria-hidden="true" />
-                </article>
-              ))}
+                      const distance = e.shiftKey ? 50 : 10;
+                      patch(n.id, {
+                        x: n.x + distance * step[0],
+                        y: n.y + distance * step[1],
+                      });
+                    }}
+                    onFocus={() => select(n.id)}
+                    data-note={n.id}
+                    key={n.id}
+                    aria-label={n.text || t("ノート", "Note")}
+                    className={n.id === selected ? "chosen" : ""}
+                    style={{
+                      left: n.x,
+                      top: n.y,
+                      width: n.width ?? (n.wide ? 480 : 260),
+                    }}
+                  >
+                    {editing && selected === n.id ? (
+                      <>
+                        <textarea
+                          autoFocus
+                          aria-label={t("本文", "Note text")}
+                          value={n.text}
+                          onChange={(e) =>
+                            patch(n.id, { text: e.target.value })
+                          }
+                        />
+                        <textarea
+                          aria-label={t("数式", "Formula")}
+                          value={n.tex ?? ""}
+                          onChange={(e) => patch(n.id, { tex: e.target.value })}
+                        />
+                        <button
+                          onClick={(e) => {
+                            edit(false);
+                            e.currentTarget.closest("article")?.focus();
+                          }}
+                        >
+                          {t("完了", "Done")}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="note-fold"
+                          aria-expanded={!n.collapsed}
+                          aria-label={
+                            n.collapsed
+                              ? t("ノートを展開", "Expand note")
+                              : t("ノートを折り畳む", "Collapse note")
+                          }
+                          onClick={() => {
+                            select(n.id);
+                            patch(n.id, { collapsed: !n.collapsed });
+                          }}
+                        >
+                          <ChevronRight size={15} aria-hidden="true" />
+                        </button>
+                        <span
+                          className={n.collapsed ? "note-summary" : "note-body"}
+                        >
+                          {n.text ||
+                            n.topic ||
+                            (n.collapsed
+                              ? n.tex || t("ノート", "Note")
+                              : !n.tex
+                                ? t("ノート", "Note")
+                                : "")}
+                        </span>
+                        {!n.collapsed && n.tex && <MathText tex={n.tex} />}
+                      </>
+                    )}
+                    <i data-resize aria-hidden="true" />
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </main>
-        {tutor && (
+        {tutor && !reading && (
           <aside>
             <h3>Tutor</h3>
-            <details className="m2-lesson">
-              <summary>
-                {t(
-                  "固定教材 · 体の埋め込み",
-                  "Worked example · Field embeddings",
-                )}
-              </summary>
-              <button
-                disabled={!rev || !!working}
-                onClick={() => openLessonStep(0)}
-              >
-                {t("定理を開く", "Open theorem")}
-              </button>
-              {active?.embeddingStep !== undefined &&
-                active.embeddingStep < embeddingSteps.length - 1 && (
-                  <button
-                    disabled={!!working}
-                    onClick={() =>
-                      openLessonStep(active.embeddingStep! + 1, active)
-                    }
-                  >
-                    {active.embeddingStep === 0
-                      ? t("導出を開く", "Open derivation")
-                      : t("証明を開く", "Open proof")}
-                  </button>
-                )}
-            </details>
             {turns.map((v, i) => (
               <div className="m2-turn" key={i}>
                 <b>{v.question}</b>
