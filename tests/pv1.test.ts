@@ -15,6 +15,9 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
     await db.exec(
       readFileSync("supabase/migrations/202611050002_import.sql", "utf8"),
     );
+    await db.exec(
+      readFileSync("supabase/migrations/202611050003_board_edits.sql", "utf8"),
+    );
     const a = crypto.randomUUID(),
       b = crypto.randomUUID(),
       id = crypto.randomUUID();
@@ -38,7 +41,21 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
       (await db.query("select * from pv_conversations")).rows.length,
       1,
     );
+    const board = (
+      await db.query<{ id: string }>(
+        "select id from pv_boards where title=$1",
+        ["Board"],
+      )
+    ).rows[0];
+    const save = (revision: number, text: string) =>
+      db.query<{ result: string | number | null }>(
+        "select pv_save_board($1,$2,$3) as result",
+        [board.id, revision, JSON.stringify([{ text }])],
+      );
+    assert.equal(Number((await save(1, "learner edit")).rows[0].result), 2);
+    assert.equal((await save(1, "stale tutor edit")).rows[0].result, null);
     await login(b);
+    assert.equal((await save(2, "another user")).rows[0].result, null);
     for (const table of [
       "pv_topics",
       "pv_boards",
@@ -55,6 +72,11 @@ test("migration, atomic creation, owner isolation, revisions and reconstruction"
     assert.deepEqual(
       (await db.query("select name,revision from pv_topics")).rows,
       [{ name: "Fields", revision: 2 }],
+    );
+    assert.deepEqual(
+      (await db.query("select elements from pv_boards where id=$1", [board.id]))
+        .rows,
+      [{ elements: [{ text: "learner edit" }] }],
     );
     const payload = JSON.stringify({
       cards: [{ topic: "fields", text: "test" }],
