@@ -120,3 +120,23 @@
     border-top: 1px solid #ccc;
   }
 }
+.pv-core form.m2-start {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 40rem;
+  margin: 1rem 0;
+  align-items: start;
+}
+.m2-start label {
+  display: grid;
+  gap: 0.25rem;
+}
+.m2-start textarea {
+  width: 100%;
+  min-height: 4rem;
+  padding: 0.65rem;
+  font: inherit;
+}
+.m2-start button {
+  justify-self: start;
+}

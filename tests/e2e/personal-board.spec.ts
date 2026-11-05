@@ -47,8 +47,13 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   await page.getByLabel("Password", { exact: true }).fill("example");
   await page.getByRole("button", { name: "ログイン", exact: true }).click();
   const open = () => page.getByRole("button", { name: "Board ↗" }).click();
-  await open();
-  await page.getByRole("button", { name: "＋ ノート" }).click();
+  await page.getByLabel("学びたいこと").fill("Fields: what is an embedding?");
+  await expect(page.getByLabel("保存先のTopic")).toHaveValue("Fields");
+  await page.getByRole("button", { name: "質問からBoardを開く" }).click();
+  await expect(page.locator("[data-note]")).toContainText(
+    "Fields: what is an embedding?",
+  );
+  await page.getByRole("button", { name: "編集", exact: true }).click();
   await page.getByLabel("本文").fill("My question");
   await page.getByRole("button", { name: "完了" }).click();
   await page.getByRole("button", { name: /^保存/ }).click();

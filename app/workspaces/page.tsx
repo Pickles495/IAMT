@@ -1,4 +1,5 @@
 "use client";
+import { suggestedTopic } from "@/lib/question-topic";
 import { PersonalBoard } from "@/components/personal-board";
 import { useState } from "react";
 import { useLocale } from "@/components/locale";
@@ -15,9 +16,45 @@ export default function Workspaces() {
     [topics, list] = useState<Topic[]>([]),
     [msg, notice] = useState(""),
     [busy, wait] = useState(false);
-  const [board, openBoard] = useState<{ id: string; title: string } | null>(
-    null,
-  );
+  const [board, openBoard] = useState<{
+    id: string;
+    title: string;
+    prompt?: string;
+  } | null>(null);
+  const [live, setLive] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [topicName, setTopicName] = useState<string | null>(null);
+  const suggested = suggestedTopic(prompt, topics);
+  async function startQuestion() {
+    const name = (topicName ?? suggested).trim(),
+      text = prompt.trim();
+    if (!name || !text) return;
+    let current = topics.find(
+      (x) => x.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
+    );
+    if (!current) {
+      const [created] = await request(token, {
+        action: "create",
+        name,
+        locale: en ? "en" : "ja",
+      });
+      const refreshed: Topic[] = await request(token);
+      list(refreshed);
+      current = refreshed.find((x) => x.id === created.id);
+    }
+    const target =
+      current?.pv_boards.find((x) => x.title === "Board") ??
+      current?.pv_boards[0];
+    if (!target || !current)
+      throw Error(t("Boardを開けませんでした", "Could not open board"));
+    openBoard({
+      id: target.id,
+      title: current.name + " · " + target.title,
+      prompt: text,
+    });
+    setPrompt("");
+    setTopicName(null);
+  }
   async function request(key: string, body?: object) {
     const r = await fetch("/api/pv1", {
       method: body ? "POST" : "GET",
@@ -49,6 +86,7 @@ export default function Workspaces() {
         boardId={board.id}
         title={board.title}
         token={token}
+        initialPrompt={board.prompt}
         close={() => openBoard(null)}
       />
     );
@@ -61,12 +99,13 @@ export default function Workspaces() {
             e.preventDefault();
             const form = new FormData(e.currentTarget);
             void run(async () => {
-              const { token: key } = await request("", {
+              const { token: key, live: enabled } = await request("", {
                 action: "login",
                 email: form.get("email"),
                 password: form.get("password"),
               });
               list(await request(key));
+              setLive(enabled === true);
               auth(key);
             });
           }}
@@ -92,11 +131,77 @@ export default function Workspaces() {
           <button
             onClick={() => {
               auth("");
+              setPrompt("");
+              setTopicName(null);
               list([]);
             }}
           >
             {t("ログアウト", "Sign out")}
           </button>
+          <form
+            className="m2-start"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(startQuestion);
+            }}
+          >
+            <label>
+              {t("学びたいこと", "Your math question")}
+              <textarea
+                required
+                maxLength={3000}
+                placeholder={t(
+                  "例：ガロア理論で √2 の像が二つあるのはなぜ？",
+                  "Why are there two possible images of √2 in Galois theory?",
+                )}
+                disabled={busy}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+              />
+            </label>
+            {prompt.trim() && (
+              <label>
+                {t("保存先のTopic", "Topic for this question")}
+                <input
+                  required
+                  maxLength={200}
+                  disabled={busy}
+                  list="m2-topic-options"
+                  value={topicName ?? suggested}
+                  onChange={(e) => setTopicName(e.target.value)}
+                />
+                <datalist id="m2-topic-options">
+                  {topics.map((x) => (
+                    <option key={x.id} value={x.name} />
+                  ))}
+                </datalist>
+              </label>
+            )}
+            {live && prompt.trim() && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  void run(async () => {
+                    const result = await request(token, {
+                      action: "suggestTopic",
+                      question: prompt,
+                      locale: en ? "en" : "ja",
+                    });
+                    setTopicName(result.name);
+                  })
+                }
+              >
+                {t(
+                  "TutorにTopicを提案してもらう",
+                  "Suggest a topic with Tutor",
+                )}
+              </button>
+            )}
+            <button disabled={busy || !prompt.trim()}>
+              {t("質問からBoardを開く", "Open board with question")}
+            </button>
+          </form>
           <label>
             {t("V4のJSONを選んで取り込む", "Import V4 JSON")}
             <input
