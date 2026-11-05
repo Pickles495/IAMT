@@ -1,3 +1,5 @@
+> この文書はV3段階の設計記録です。現行UIと実装範囲は[技術仕様書V4](technical-specification-v4.md)を参照してください。
+
 # V3 draft architecture and decisions
 
 ## Approved scope
