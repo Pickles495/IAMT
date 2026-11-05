@@ -1,4 +1,5 @@
 import { exampleReply, generateReply } from "@/ai/board-tutor";
+import { validBoardElements } from "@/lib/board-elements";
 export async function POST(req: Request) {
   const err = (error: string, status: number) =>
     Response.json({ error }, { status });
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
         cache: "no-store",
       });
     if (b.action === "save") {
-      if (!Number.isSafeInteger(b.revision) || !Array.isArray(b.elements))
+      if (!Number.isSafeInteger(b.revision) || !validBoardElements(b.elements))
         return err("Invalid save", 400);
       const r = await db("rpc/pv_save_board", {
         board_id: b.boardId,

@@ -140,3 +140,27 @@
 .m2-start button {
   justify-self: start;
 }
+
+.destination-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0.75rem;
+}
+.destination-fields select,
+.destination-fields input {
+  width: 100%;
+  min-width: 0;
+}
+.workspace-import {
+  margin: 1.25rem 0;
+  color: #444;
+}
+.workspace-import summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.workspace-import label {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
