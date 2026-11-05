@@ -79,6 +79,14 @@ function Frame({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="sidebar-bottom">
           <Link
+            className="nav-item"
+            href="/workspaces"
+            aria-label={t("個人ワークスペース", "Personal workspace")}
+          >
+            <BookOpen size={19} />
+            <span>{t("個人ワークスペース", "Personal workspace")}</span>
+          </Link>
+          <Link
             href="/settings"
             aria-label={t("設定", "Settings")}
             className={`nav-item ${path === "/settings" ? "active" : ""}`}
