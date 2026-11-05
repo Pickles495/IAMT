@@ -91,6 +91,33 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   await open();
   await expect(cards).toHaveCount(2);
   await expect(cards.last()).toContainText("Example roots");
+  await note.focus();
+  await page.getByRole("button", { name: "補足を書く" }).click();
+  await page.getByLabel("補足の種類").selectOption("question");
+  await page.getByLabel("本文").fill("なぜ像は根になる？");
+  await page.getByRole("button", { name: "完了" }).click();
+  await page.getByRole("button", { name: "解答を添える" }).click();
+  await expect(page.getByLabel("補足の種類")).toHaveValue("answer");
+  await page.getByLabel("本文").fill("準同型は積と和を保つ。");
+  await page.getByLabel("数式", { exact: true }).fill("f(x)=0");
+  await page.getByRole("button", { name: "完了" }).click();
+  const savedQuestion = note.getByRole("button", { name: /問い.*なぜ像/ });
+  await savedQuestion.click();
+  await expect(
+    note.getByText("準同型は積と和を保つ。", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: /^保存/ }).click();
+  await page.getByRole("button", { name: "← 一覧" }).click();
+  await open();
+  await note.getByRole("button", { name: "補足を開く" }).click();
+  await expect(savedQuestion).toHaveAttribute("aria-expanded", "false");
+  await savedQuestion.click();
+  await expect(
+    note.locator(".reading-detail .math-display").last(),
+  ).toBeVisible();
+  await expect(note.locator("[data-inline-note]").last()).toContainText(
+    "準同型",
+  );
   const lesson = page.getByRole("button", { name: "教材 · 体の埋め込み" });
   await lesson.click();
   const why = page.getByRole("button", { name: "なぜ候補は二つ？" });

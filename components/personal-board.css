@@ -265,3 +265,30 @@
 .m2 .context-action {
   margin: 0.25rem 0.3rem 0.25rem 0;
 }
+
+.m2 .memo-kind {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+.m2 .branch-kind {
+  flex: none;
+  font-weight: 500;
+  color: #555;
+}
+.m2 .branch-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m2 .attach-at-source {
+  display: block;
+  clear: both;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.55rem;
+  color: #414141;
+  font-size: 0.85rem;
+}

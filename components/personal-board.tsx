@@ -6,7 +6,13 @@ import { ChevronRight } from "lucide-react";
 import { BoardReading } from "./board-reading";
 import { MathText } from "./math";
 import "./personal-board.css";
-import { type Note, possibleParents, removeNote } from "@/lib/board-elements";
+import {
+  memoKinds,
+  type MemoKind,
+  type Note,
+  possibleParents,
+  removeNote,
+} from "@/lib/board-elements";
 import { embeddingSteps } from "@/lib/embedding-lesson";
 type Turn = { question: string; reply: string; example: boolean };
 type Gesture = {
@@ -80,7 +86,7 @@ export function PersonalBoard({
   function belongsToLesson(n: Note): boolean {
     const parent = n.parent ? byId.get(n.parent) : undefined;
     if (!parent) return false;
-    if (n.inlineMemo && parent.embeddingStep !== undefined) return true;
+    if (n.inlineMemo) return true;
     if (n.embeddingStep === 1 || n.embeddingStep === 3)
       return parent.embeddingStep === 0;
     return (
@@ -160,8 +166,18 @@ export function PersonalBoard({
   }
   function add(text = "", tex = "", anchor?: Note, inlineMemo?: boolean) {
     const id = crypto.randomUUID();
+    if (
+      inlineMemo &&
+      anchor &&
+      (!reading || (anchor.id !== reading.id && !inlineIds.has(anchor.id)))
+    )
+      read(anchor.id);
     change([
-      ...notes,
+      ...(inlineMemo && anchor?.collapsed
+        ? notes.map((n) =>
+            n.id === anchor.id ? { ...n, collapsed: false } : n,
+          )
+        : notes),
       {
         id,
         text,
@@ -170,6 +186,8 @@ export function PersonalBoard({
         y: anchor ? anchor.y : (60 - pan.y) / zoom,
         parent: anchor?.id,
         inlineMemo,
+        memoKind:
+          inlineMemo && anchor?.memoKind === "question" ? "answer" : undefined,
       },
     ]);
     select(id);
@@ -269,6 +287,23 @@ export function PersonalBoard({
     if (!editing || selected !== n.id) return null;
     return (
       <>
+        {n.inlineMemo && (
+          <label className="memo-kind">
+            {t("補足の種類", "Note type")}
+            <select
+              value={n.memoKind ?? "memo"}
+              onChange={(e) =>
+                patch(n.id, { memoKind: e.target.value as MemoKind })
+              }
+            >
+              {(Object.keys(memoKinds) as MemoKind[]).map((k) => (
+                <option key={k} value={k}>
+                  {t(memoKinds[k][0], memoKinds[k][1])}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <textarea
           autoFocus
           aria-label={t("本文", "Note text")}
@@ -291,6 +326,24 @@ export function PersonalBoard({
           {t("完了", "Done")}
         </button>
       </>
+    );
+  }
+  function attachmentControl(n: Note) {
+    if (n.id !== selected || editing) return null;
+    return (
+      <button
+        type="button"
+        className="attach-at-source"
+        disabled={!!working}
+        onClick={(e) => {
+          e.stopPropagation();
+          add("", "", n, true);
+        }}
+      >
+        {n.memoKind === "question"
+          ? t("解答を添える", "Attach answer")
+          : t("補足を書く", "Attach note")}
+      </button>
     );
   }
   const contextLesson =
@@ -426,7 +479,7 @@ export function PersonalBoard({
                 if (
                   e.button !== 0 ||
                   (e.target as Element).closest(
-                    "textarea,button,.inline-branches",
+                    "textarea,button,select,.inline-branches",
                   )
                 )
                   return;
@@ -599,6 +652,7 @@ export function PersonalBoard({
                                 : "")}
                         </span>
                         {!n.collapsed && n.tex && <MathText tex={n.tex} />}
+                        {attachmentControl(n)}
                         {!n.collapsed &&
                           (n.embeddingStep === 0 ||
                             notes.some((child) => child.parent === n.id)) && (
@@ -629,6 +683,7 @@ export function PersonalBoard({
                                   reveal={openLessonStep}
                                   select={select}
                                   editor={noteEditor}
+                                  attach={attachmentControl}
                                 />
                               )}
                             </>

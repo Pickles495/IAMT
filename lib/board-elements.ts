@@ -1,4 +1,11 @@
 import { embeddingSteps } from "./embedding-lesson";
+export const memoKinds = {
+  memo: ["メモ", "Note"],
+  question: ["問い", "Question"],
+  proof: ["証明", "Proof"],
+  answer: ["解答", "Answer"],
+} as const;
+export type MemoKind = keyof typeof memoKinds;
 export type Note = {
   id: string;
   text: string;
@@ -12,6 +19,7 @@ export type Note = {
   parent?: string;
   embeddingStep?: number;
   inlineMemo?: boolean;
+  memoKind?: MemoKind;
 };
 
 // A parent link represents a branch of the learner's notes.
@@ -54,6 +62,9 @@ export function validBoardElements(value: unknown): value is Note[] {
       return false;
     ids.add(n.id);
     return (
+      (n.memoKind === undefined ||
+        (typeof n.memoKind === "string" &&
+          Object.hasOwn(memoKinds, n.memoKind))) &&
       (n.inlineMemo === undefined || typeof n.inlineMemo === "boolean") &&
       (n.embeddingStep === undefined ||
         (Number.isInteger(n.embeddingStep) &&
