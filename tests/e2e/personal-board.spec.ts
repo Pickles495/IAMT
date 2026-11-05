@@ -96,21 +96,51 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   const why = page.getByRole("button", { name: "なぜ候補は二つ？" });
   const proof = page.getByRole("button", { name: "両方が埋め込みになる理由" });
   const example = page.getByRole("button", { name: "具体例で比較する" });
-  const back = page.getByRole("button", { name: "← キャンバスに戻る" });
-  await example.click();
+  const canvas = page.locator(".m2-view");
+  const anchor = canvas.locator(".reading-anchor");
+  const transform = await page
+    .locator(".m2-world")
+    .evaluate((el) => el.getAttribute("style"));
+  await expect(canvas).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Tutor", exact: true }),
+  ).toBeVisible();
+  await expect(
+    anchor.getByRole("button", { name: "なぜ候補は二つ？" }),
+  ).toBeVisible();
+  const tutor = page.locator(".m2-layout aside");
+  await tutor.getByRole("button", { name: "具体例を確認" }).click();
+  await expect(example).toHaveAttribute("aria-expanded", "false");
+  await tutor.getByRole("button", { name: "破棄" }).click();
+  await tutor.getByRole("button", { name: "具体例を確認" }).click();
+  await tutor.getByRole("button", { name: "Boardに反映" }).click();
+  await expect(example).toHaveAttribute("aria-expanded", "true");
   await why.click();
   await proof.click();
   await why.press("Enter");
   await expect(why).toBeFocused();
   await expect(proof).toBeHidden();
   await expect(example).toHaveAttribute("aria-expanded", "true");
-  await back.click();
-  await expect(lesson).toBeFocused();
-  await expect(cards).toHaveCount(6);
+  await expect(page.locator(".m2-world")).toHaveAttribute("style", transform!);
+  await expect(cards).toHaveCount(3);
+  await expect(anchor.locator("[data-inline-note]")).toHaveCount(1);
+  await example.click();
+  await example.click();
+  await expect(page.locator(".m2-layout aside")).toContainText("元 1+√2");
+  await tutor.getByRole("button", { name: "ここにメモを添える" }).click();
+  await anchor.getByLabel("本文").fill("二つの像を比較した");
+  await anchor.getByRole("button", { name: "完了" }).click();
+  await anchor.getByRole("button", { name: "補足を閉じる" }).click();
+  await expect(example).toBeHidden();
+  await expect(cards).toHaveCount(3);
+  await lesson.click();
   await page.getByRole("button", { name: /^保存/ }).click();
   await page.getByRole("button", { name: "← 一覧" }).click();
   await open();
   await lesson.click();
+  await expect(
+    anchor.getByRole("button", { name: "二つの像を比較した" }),
+  ).toBeVisible();
   await expect(why).toHaveAttribute("aria-expanded", "false");
   await expect(example).toHaveAttribute("aria-expanded", "true");
   await why.click();

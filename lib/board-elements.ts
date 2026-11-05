@@ -11,6 +11,7 @@ export type Note = {
   topic?: string;
   parent?: string;
   embeddingStep?: number;
+  inlineMemo?: boolean;
 };
 
 // A parent link represents a branch of the learner's notes.
@@ -53,6 +54,7 @@ export function validBoardElements(value: unknown): value is Note[] {
       return false;
     ids.add(n.id);
     return (
+      (n.inlineMemo === undefined || typeof n.inlineMemo === "boolean") &&
       (n.embeddingStep === undefined ||
         (Number.isInteger(n.embeddingStep) &&
           n.embeddingStep >= 0 &&

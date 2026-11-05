@@ -42,9 +42,11 @@ export function PersonalBoard({
   const [input, question] = useState(initialPrompt ?? ""),
     [turns, history] = useState<Turn[]>([]),
     [live, setLive] = useState(false);
-  const [pending, suggest] = useState<{ p: Proposal; target?: Note } | null>(
-      null,
-    ),
+  const [pending, suggest] = useState<{
+      p: Proposal;
+      target?: Note;
+      step?: number;
+    } | null>(null),
     [working, busy] = useState(""),
     [message, status] = useState("");
   const [tutor, show] = useState(true),
@@ -55,19 +57,45 @@ export function PersonalBoard({
     dirty = rev > 0 && notes !== saved;
   const [readingId, read] = useState("");
   const reading = notes.find((n) => n.id === readingId);
-  const returnTo = useRef<HTMLButtonElement | null>(null);
+  const inlineIds = new Set<string>();
+  if (reading) {
+    const children = new Map<string, string[]>();
+    for (const note of notes)
+      if (note.parent) {
+        const siblings = children.get(note.parent) ?? [];
+        siblings.push(note.id);
+        children.set(note.parent, siblings);
+      }
+    const pending = [...(children.get(reading.id) ?? [])];
+    while (pending.length) {
+      const id = pending.pop()!;
+      if (id === reading.id || inlineIds.has(id)) continue;
+      inlineIds.add(id);
+      pending.push(...(children.get(id) ?? []));
+    }
+  }
+  // Known lesson steps belong to their source even when the source is folded.
+  // Keep orphaned and manually re-linked notes accessible on the canvas.
+  const byId = new Map(notes.map((n) => [n.id, n]));
+  function belongsToLesson(n: Note): boolean {
+    const parent = n.parent ? byId.get(n.parent) : undefined;
+    if (!parent) return false;
+    if (n.inlineMemo && parent.embeddingStep !== undefined) return true;
+    if (n.embeddingStep === 1 || n.embeddingStep === 3)
+      return parent.embeddingStep === 0;
+    return (
+      n.embeddingStep === 2 &&
+      parent.embeddingStep === 1 &&
+      belongsToLesson(parent)
+    );
+  }
+  const canvasNotes = notes.filter(
+    (n) => !inlineIds.has(n.id) && !belongsToLesson(n),
+  );
   function beginReading(id: string) {
-    returnTo.current =
-      document.activeElement instanceof HTMLButtonElement
-        ? document.activeElement
-        : null;
     edit(false);
     read(id);
-    requestAnimationFrame(() =>
-      document
-        .querySelector<HTMLButtonElement>(".board-reading > button")
-        ?.focus(),
-    );
+    select(id);
   }
   async function request(action: string, extra: object = {}) {
     const r = await fetch("/api/pv1/board", {
@@ -130,7 +158,7 @@ export function PersonalBoard({
   function patch(id: string, v: Partial<Note>) {
     change(notes.map((n) => (n.id === id ? { ...n, ...v } : n)));
   }
-  function add(text = "", tex = "", anchor?: Note) {
+  function add(text = "", tex = "", anchor?: Note, inlineMemo?: boolean) {
     const id = crypto.randomUUID();
     change([
       ...notes,
@@ -141,6 +169,7 @@ export function PersonalBoard({
         x: anchor ? anchor.x + (anchor.width ?? 260) + 40 : (60 - pan.x) / zoom,
         y: anchor ? anchor.y : (60 - pan.y) / zoom,
         parent: anchor?.id,
+        inlineMemo,
       },
     ]);
     select(id);
@@ -177,11 +206,23 @@ export function PersonalBoard({
         parent: parent?.id,
         x,
         y: bottom,
-        width: 300,
+        width: parent
+          ? 300
+          : Math.max(
+              220,
+              Math.min(440, (viewport.current?.clientWidth ?? 350) / zoom - 32),
+            ),
       };
       change([...notes, note]);
     }
-    if (!parent) beginReading(note.id);
+    if (!parent) {
+      if (note.collapsed) patch(note.id, { collapsed: false });
+      beginReading(note.id);
+      move({ x: 16 - note.x * zoom, y: 16 - note.y * zoom });
+    } else {
+      if (existing?.collapsed) patch(existing.id, { collapsed: false });
+      select(note.id);
+    }
   }
   async function run(name: string, fn: () => Promise<void>) {
     busy(name);
@@ -224,7 +265,45 @@ export function PersonalBoard({
       );
     });
   }
-  const stale = pending?.target && !notes.includes(pending.target);
+  function noteEditor(n: Note) {
+    if (!editing || selected !== n.id) return null;
+    return (
+      <>
+        <textarea
+          autoFocus
+          aria-label={t("本文", "Note text")}
+          value={n.text}
+          onChange={(e) => patch(n.id, { text: e.target.value })}
+        />
+        <textarea
+          aria-label={t("数式", "Formula")}
+          value={n.tex ?? ""}
+          onChange={(e) => patch(n.id, { tex: e.target.value })}
+        />
+        <button
+          onClick={(e) => {
+            edit(false);
+            e.currentTarget
+              .closest<HTMLElement>("[data-inline-note],article")
+              ?.focus({ preventScroll: true });
+          }}
+        >
+          {t("完了", "Done")}
+        </button>
+      </>
+    );
+  }
+  const contextLesson =
+    !live &&
+    active?.embeddingStep !== undefined &&
+    reading &&
+    !reading.collapsed &&
+    (active.id === reading.id || inlineIds.has(active.id));
+  const stale =
+    pending?.target &&
+    (!notes.includes(pending.target) ||
+      (pending.step !== undefined &&
+        (!contextLesson || pending.target.id !== selected)));
   return (
     <section className="m2">
       <header>
@@ -246,31 +325,13 @@ export function PersonalBoard({
           {t("保存", "Save")}
           {dirty ? " *" : ""}
         </button>
-        <button
-          hidden={!!reading}
-          aria-expanded={tutor}
-          onClick={() => show(!tutor)}
-        >
+        <button aria-expanded={tutor} onClick={() => show(!tutor)}>
           Tutor
         </button>
       </header>
       <div className="m2-layout">
-        <main>
-          {reading && (
-            <BoardReading
-              root={reading}
-              notes={notes}
-              reveal={openLessonStep}
-              toggle={(n) => patch(n.id, { collapsed: !n.collapsed })}
-              close={() => {
-                read("");
-                requestAnimationFrame(() =>
-                  returnTo.current?.focus({ preventScroll: true }),
-                );
-              }}
-            />
-          )}
-          <div className="board-canvas-surface" hidden={!!reading}>
+        <div className="m2-canvas-column">
+          <div className="board-canvas-surface">
             <div className="m2-tools">
               <button disabled={!rev} onClick={() => openLessonStep(0)}>
                 {t("教材 · 体の埋め込み", "Lesson · Field embeddings")}
@@ -342,9 +403,7 @@ export function PersonalBoard({
                       </select>
                     </label>
                   )}
-                  <button onClick={() => beginReading(active.id)}>
-                    {t("つながりを読む", "Read connected notes")}
-                  </button>
+
                   <button onClick={() => edit(!editing)}>
                     {t("編集", "Edit")}
                   </button>
@@ -366,7 +425,9 @@ export function PersonalBoard({
               onPointerDown={(e) => {
                 if (
                   e.button !== 0 ||
-                  (e.target as Element).closest("textarea,button")
+                  (e.target as Element).closest(
+                    "textarea,button,.inline-branches",
+                  )
                 )
                   return;
                 const el = (e.target as Element).closest<HTMLElement>(
@@ -438,8 +499,8 @@ export function PersonalBoard({
                 }}
               >
                 <svg aria-hidden="true">
-                  {notes.map((n) => {
-                    const from = notes.find((k) => k.id === n.parent);
+                  {canvasNotes.map((n) => {
+                    const from = canvasNotes.find((k) => k.id === n.parent);
                     return (
                       from && (
                         <line
@@ -454,7 +515,7 @@ export function PersonalBoard({
                     );
                   })}
                 </svg>
-                {notes.map((n) => (
+                {canvasNotes.map((n) => (
                   <article
                     tabIndex={0}
                     aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Enter"
@@ -492,42 +553,23 @@ export function PersonalBoard({
                         y: n.y + distance * step[1],
                       });
                     }}
-                    onFocus={() => select(n.id)}
+                    onFocus={(e) => {
+                      if (e.target === e.currentTarget) select(n.id);
+                    }}
                     data-note={n.id}
                     key={n.id}
                     aria-label={n.text || t("ノート", "Note")}
-                    className={n.id === selected ? "chosen" : ""}
+                    className={[
+                      n.id === selected ? "chosen" : "",
+                      readingId === n.id ? "reading-anchor" : "",
+                    ].join(" ")}
                     style={{
                       left: n.x,
                       top: n.y,
                       width: n.width ?? (n.wide ? 480 : 260),
                     }}
                   >
-                    {editing && selected === n.id ? (
-                      <>
-                        <textarea
-                          autoFocus
-                          aria-label={t("本文", "Note text")}
-                          value={n.text}
-                          onChange={(e) =>
-                            patch(n.id, { text: e.target.value })
-                          }
-                        />
-                        <textarea
-                          aria-label={t("数式", "Formula")}
-                          value={n.tex ?? ""}
-                          onChange={(e) => patch(n.id, { tex: e.target.value })}
-                        />
-                        <button
-                          onClick={(e) => {
-                            edit(false);
-                            e.currentTarget.closest("article")?.focus();
-                          }}
-                        >
-                          {t("完了", "Done")}
-                        </button>
-                      </>
-                    ) : (
+                    {noteEditor(n) ?? (
                       <>
                         <button
                           type="button"
@@ -557,6 +599,40 @@ export function PersonalBoard({
                                 : "")}
                         </span>
                         {!n.collapsed && n.tex && <MathText tex={n.tex} />}
+                        {!n.collapsed &&
+                          (n.embeddingStep === 0 ||
+                            notes.some((child) => child.parent === n.id)) && (
+                            <>
+                              <button
+                                className="branch-switch"
+                                aria-expanded={readingId === n.id}
+                                onClick={() => {
+                                  if (readingId === n.id) {
+                                    read("");
+                                    select(n.id);
+                                  } else beginReading(n.id);
+                                }}
+                              >
+                                {readingId === n.id
+                                  ? t("補足を閉じる", "Close details")
+                                  : t("補足を開く", "Open details")}
+                              </button>
+                              {readingId === n.id && (
+                                <BoardReading
+                                  root={n}
+                                  notes={notes}
+                                  toggle={(node) =>
+                                    patch(node.id, {
+                                      collapsed: !node.collapsed,
+                                    })
+                                  }
+                                  reveal={openLessonStep}
+                                  select={select}
+                                  editor={noteEditor}
+                                />
+                              )}
+                            </>
+                          )}
                       </>
                     )}
                     <i data-resize aria-hidden="true" />
@@ -565,8 +641,8 @@ export function PersonalBoard({
               </div>
             </div>
           </div>
-        </main>
-        {tutor && !reading && (
+        </div>
+        {tutor && (
           <aside>
             <h3>Tutor</h3>
             {turns.map((v, i) => (
@@ -586,7 +662,9 @@ export function PersonalBoard({
                   disabled={!!stale}
                   onClick={() => {
                     if (stale) return;
-                    if (pending.p.action === "replace" && pending.target)
+                    if (pending.step !== undefined && pending.target)
+                      openLessonStep(pending.step, pending.target);
+                    else if (pending.p.action === "replace" && pending.target)
                       patch(pending.target.id, {
                         text: pending.p.text,
                         tex: pending.p.tex,
@@ -627,17 +705,62 @@ export function PersonalBoard({
                 onChange={(e) => question(e.target.value)}
               />
             )}
-            <button
-              disabled={!rev || !!working || dirty || (live && !input.trim())}
-              onClick={ask}
-            >
-              {working === "ask"
-                ? "…"
-                : live
-                  ? t("質問する", "Ask")
-                  : t("固定例で操作を試す", "Try a fixed example")}
-            </button>
-            {dirty && (
+            {contextLesson && active && (
+              <>
+                {(active.embeddingStep === 0
+                  ? [1, 3]
+                  : active.embeddingStep === 1
+                    ? [2]
+                    : []
+                ).map((step) => (
+                  <button
+                    className="context-action"
+                    key={step}
+                    onClick={() => {
+                      const model = embeddingSteps[step];
+                      const savedStep = notes.find(
+                        (n) =>
+                          n.parent === active.id && n.embeddingStep === step,
+                      );
+                      suggest({
+                        target: active,
+                        step,
+                        p: {
+                          action: "append",
+                          text: savedStep?.text ?? (en ? model.en : model.ja),
+                          tex: savedStep?.tex ?? model.tex,
+                        },
+                      });
+                    }}
+                  >
+                    {step === 1
+                      ? t("導出を確認", "Preview derivation")
+                      : step === 2
+                        ? t("証明を確認", "Preview proof")
+                        : t("具体例を確認", "Preview example")}
+                  </button>
+                ))}
+                <button
+                  className="context-action"
+                  onClick={() => add("", "", active, true)}
+                >
+                  {t("ここにメモを添える", "Annotate this step")}
+                </button>
+              </>
+            )}
+            {!contextLesson && (
+              <button
+                disabled={!rev || !!working || dirty || (live && !input.trim())}
+                onClick={ask}
+              >
+                {working === "ask"
+                  ? "…"
+                  : live
+                    ? t("質問する", "Ask")
+                    : t("固定例で操作を試す", "Try a fixed example")}
+              </button>
+            )}
+            {dirty && !contextLesson && (
               <small>
                 {t(
                   "質問する前にBoardを保存してください。",

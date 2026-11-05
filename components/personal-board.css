@@ -31,7 +31,7 @@
   border-radius: 0.65rem;
   overflow: hidden;
 }
-.m2-layout main {
+.m2-canvas-column {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -54,7 +54,7 @@
   position: relative;
   overflow: hidden;
   flex: 1;
-  min-height: 50vh;
+  min-height: clamp(26rem, 64vh, 50rem);
   touch-action: none;
   background-color: #fafafa;
   background-image: radial-gradient(#ccc 1px, transparent 1px);
@@ -180,30 +180,31 @@
   display: block;
   overflow-x: auto;
 }
-.board-canvas-surface:not([hidden]) {
+.board-canvas-surface {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
-.board-reading {
-  width: 100%;
-  min-height: 60vh;
-  color: #252525;
-  background: white;
-  padding: clamp(1rem, 3vw, 2.25rem);
+.m2-world article.reading-anchor {
+  z-index: 1;
 }
-.reading-page {
-  max-width: 40rem;
-  margin: 2rem auto;
-  line-height: 1.8;
+.m2-world .inline-branches {
+  cursor: auto;
+  max-height: min(40vh, 24rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  white-space: normal;
 }
-.reading-page h3 {
-  font-size: clamp(1.35rem, 3vw, 2rem);
-  margin: 0 0 1rem;
-}
-.reading-page .math-display {
+.m2-world .branch-switch {
   display: block;
-  overflow-x: auto;
+  margin-block: 0.4rem;
+  font-size: 0.85rem;
+  border-color: transparent;
+  text-decoration: underline;
+}
+.m2-tools select {
+  max-width: min(15rem, 60vw);
 }
 .reading-branch {
   border-top: 1px solid #ddd;
@@ -259,4 +260,8 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.m2 .context-action {
+  margin: 0.25rem 0.3rem 0.25rem 0;
 }
