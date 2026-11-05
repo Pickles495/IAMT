@@ -53,8 +53,15 @@ test("a saved numeric answer contributes to progress after signing in again", as
   await page.getByLabel("ガロア理論", { exact: true }).check();
   await page.getByRole("button", { name: "作成", exact: true }).click();
   const problem = page.locator(".account-practice article").nth(1);
-  await problem.getByRole("textbox").fill("2");
-  await problem.getByRole("button", { name: "解答を保存" }).click();
+  const answer = problem.getByRole("textbox");
+  await answer.press("Tab");
+  await expect(problem.getByRole("button", { name: "√" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(answer).toBeFocused();
+  await expect(answer).toHaveValue("√");
+  await answer.press("Backspace");
+  await page.keyboard.type("2");
+  await problem.getByRole("button", { name: "解答を保存" }).press("Enter");
   await expect(problem.getByRole("status")).toContainText("正解");
   await page.reload();
   await enter();

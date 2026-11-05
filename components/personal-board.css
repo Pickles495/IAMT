@@ -164,3 +164,19 @@
   gap: 0.5rem;
   margin: 0.75rem 0;
 }
+.m2-lesson {
+  margin: 0.75rem 0 1rem;
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--pv-line, #d4d4d4);
+}
+.m2-lesson summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.m2-lesson button {
+  margin: 0.5rem 0.4rem 0 0;
+}
+.m2-world article .math-display {
+  display: block;
+  overflow-x: auto;
+}
