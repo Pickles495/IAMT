@@ -10,13 +10,15 @@ export function BoardReading({
   notes,
   toggle,
   reveal,
-  close,
+  select,
+  editor,
 }: {
   root: Note;
   notes: Note[];
   toggle: (note: Note) => void;
   reveal: (step: number, parent: Note) => void;
-  close: () => void;
+  select: (id: string) => void;
+  editor: (n: Note) => React.ReactNode;
 }) {
   const { t } = useLocale();
   const prefix = useId();
@@ -62,7 +64,12 @@ export function BoardReading({
             type="button"
             aria-expanded={expanded}
             aria-controls={id}
-            onClick={() => (note ? toggle(note) : reveal(step!, parent))}
+            onClick={() => {
+              if (note) {
+                toggle(note);
+                select(expanded ? parent.id : note.id);
+              } else reveal(step!, parent);
+            }}
           >
             <ChevronRight size={16} aria-hidden="true" />
             <span>{label}</span>
@@ -70,7 +77,16 @@ export function BoardReading({
           <div id={id} hidden={!expanded} className="reading-detail">
             {expanded && note && (
               <>
-                {body(note)}
+                <div
+                  data-inline-note={note.id}
+                  tabIndex={0}
+                  onFocus={(e) => {
+                    if (e.target === e.currentTarget) select(note.id);
+                  }}
+                  onClick={() => select(note.id)}
+                >
+                  {editor(note) ?? body(note)}
+                </div>
                 {branches(note, new Set([...path, note.id]))}
               </>
             )}
@@ -80,19 +96,6 @@ export function BoardReading({
     });
   }
   return (
-    <section className="board-reading" aria-label={t("読む", "Reading view")}>
-      <button type="button" onClick={close}>
-        {t("← キャンバスに戻る", "← Back to canvas")}
-      </button>
-      <div className="reading-page">
-        <h3>
-          {root.embeddingStep === 0
-            ? t("体の埋め込み", "Field embeddings")
-            : t("選択したノート", "Selected note")}
-        </h3>
-        {body(root)}
-        {branches(root, new Set([root.id]))}
-      </div>
-    </section>
+    <div className="inline-branches">{branches(root, new Set([root.id]))}</div>
   );
 }
