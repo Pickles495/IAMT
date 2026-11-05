@@ -24,14 +24,6 @@ export function BoardReading({
 }) {
   const { t } = useLocale();
   const prefix = useId();
-  function body(n: Note) {
-    return (
-      <>
-        <p>{n.text}</p>
-        {n.tex && <MathText tex={n.tex} />}
-      </>
-    );
-  }
   function branches(parent: Note, path: Set<string>) {
     const children = notes.filter(
       (n) => n.parent === parent.id && !path.has(n.id),
@@ -52,6 +44,13 @@ export function BoardReading({
       const expanded = !!note && !note.collapsed;
       const key = step === undefined ? note!.id : String(step);
       const id = prefix + parent.id + "-" + key;
+      const [firstLine, ...followingLines] = (note?.text.trim() ?? "").split(
+        "\n",
+      );
+      const formulaTitle =
+        step === undefined && !firstLine ? note?.tex : undefined;
+      const detailText =
+        step === undefined ? followingLines.join("\n") : note?.text;
       const label =
         step === 1
           ? t("なぜ候補は二つ？", "Why only two candidates?")
@@ -59,9 +58,28 @@ export function BoardReading({
             ? t("両方が埋め込みになる理由", "Why do both maps work?")
             : step === 3
               ? t("具体例で比較する", "Compare a concrete example")
-              : note?.text || note?.tex || t("補足", "Related note");
+              : firstLine || t("補足", "Related note");
       return (
-        <section className="reading-branch" key={key}>
+        <section
+          className="reading-branch"
+          key={key}
+          onKeyDown={(event) => {
+            if (
+              event.key !== "Escape" ||
+              !expanded ||
+              !note ||
+              event.nativeEvent.isComposing ||
+              (event.target instanceof HTMLElement &&
+                event.target.closest("textarea, input, select"))
+            )
+              return;
+            event.preventDefault();
+            event.stopPropagation();
+            toggle(note);
+            select(parent.id);
+            event.currentTarget.querySelector("button")?.focus();
+          }}
+        >
           <button
             type="button"
             aria-expanded={expanded}
@@ -79,7 +97,13 @@ export function BoardReading({
                 {t(memoKinds[note.memoKind][0], memoKinds[note.memoKind][1])}
               </small>
             )}
-            <span className="branch-label">{label}</span>
+            <span className="branch-label">
+              {formulaTitle ? (
+                <MathText tex={formulaTitle} display={false} />
+              ) : (
+                label
+              )}
+            </span>
           </button>
           <div id={id} hidden={!expanded} className="reading-detail">
             {expanded && note && (
@@ -94,7 +118,8 @@ export function BoardReading({
                 >
                   {editor(note) ?? (
                     <>
-                      {body(note)}
+                      {detailText && <p>{detailText}</p>}
+                      {note.tex && !formulaTitle && <MathText tex={note.tex} />}
                       {attach(note)}
                     </>
                   )}

@@ -80,7 +80,8 @@ function Frame({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="sidebar-bottom">
           <Link
-            className="nav-item"
+            className={`nav-item ${personal ? "active" : ""}`}
+            aria-current={personal ? "page" : undefined}
             href="/workspaces"
             aria-label={t("個人ワークスペース", "Personal workspace")}
           >
@@ -89,6 +90,7 @@ function Frame({ children }: { children: React.ReactNode }) {
           </Link>
           <Link
             href="/settings"
+            aria-current={path === "/settings" ? "page" : undefined}
             aria-label={t("設定", "Settings")}
             className={`nav-item ${path === "/settings" ? "active" : ""}`}
           >
