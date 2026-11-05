@@ -151,3 +151,4 @@ vite.config.ts.timestamp-*
 # Browser verification artifacts
 playwright-report/
 test-results/
+.vercel

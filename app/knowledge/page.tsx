@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/components/locale";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +12,12 @@ import {
   Search,
 } from "lucide-react";
 import { getTopic, topics, relations, type TopicId } from "@/lib/domain";
+import {
+  definitions,
+  categories,
+  relationLabels,
+  relationExplanations,
+} from "@/lib/topic-english";
 import { useDemo } from "@/components/demo-provider";
 export default function Page() {
   return (
@@ -20,6 +27,7 @@ export default function Page() {
   );
 }
 function Knowledge() {
+  const { t: tx, en } = useLocale();
   const query = useSearchParams();
   const { state, setState } = useDemo();
   const [selected, setSelected] = useState<TopicId>(
@@ -42,10 +50,17 @@ function Knowledge() {
       <div className="page-heading">
         <div>
           <div className="eyebrow">EVERY IDEA CONNECTS</div>
-          <h1>知識のあいだに、道を見つける。</h1>
-          <p>順番のない地図で、気になる概念から歩き始めよう。</p>
+          <h1>Knowledge Map</h1>
+          <p>
+            {tx(
+              "トピックと概念間の関係",
+              "Topics and conceptual relationships",
+            )}
+          </p>
         </div>
-        <span className="pill">6 TOPICS · サンプル</span>
+        <span className="pill">
+          {tx("6 TOPICS · サンプル", "6 TOPICS · Sample")}
+        </span>
       </div>
       <div className="map-toolbar">
         <label className="search-field">
@@ -53,11 +68,11 @@ function Knowledge() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="トピックを探す"
-            aria-label="トピックを検索"
+            placeholder={tx("トピックを探す", "Find a topic")}
+            aria-label={tx("トピックを検索", "Search topics")}
           />
         </label>
-        <div className="segmented" aria-label="マップ表示">
+        <div className="segmented" aria-label={tx("マップ表示", "Map view")}>
           {(["graph", "tree"] as const).map((v) => (
             <button
               key={v}
@@ -82,16 +97,30 @@ function Knowledge() {
             <span className="tiny-label">
               MATHEMATICS / {view.toUpperCase()}
             </span>
-            <span className="muted">分類と概念間の関係は別の構造です</span>
+            <span className="muted">
+              {tx(
+                "分類と概念間の関係は別の構造です",
+                "Classification and conceptual relationships are separate structures.",
+              )}
+            </span>
           </div>
           {filtered.length === 0 ? (
             <div className="empty-state">
-              <h3>一致するサンプルトピックがありません</h3>
+              <h3>
+                {tx(
+                  "一致するサンプルトピックがありません",
+                  "No matching sample topics",
+                )}
+              </h3>
               <p>
-                この地図は6件の例です。数学分野を制限するものではありません。
+                {tx(
+                  "この地図は6件の例です。数学分野を制限するものではありません。",
+                  "These six samples do not limit the mathematics you can explore.",
+                )}
               </p>
               <Link href="/learn" className="text-link">
-                Tutorに自由に問いを書く <ArrowRight size={15} />
+                {tx("Tutorに自由に問いを書く", "Tutor")}
+                <ArrowRight size={15} />
               </Link>
             </div>
           ) : view === "graph" ? (
@@ -130,7 +159,7 @@ function Knowledge() {
                               x={(from.x + to.x) / 2 + 8}
                               y={(from.y + to.y) / 2 - 8}
                             >
-                              {r.label}
+                              {en ? relationLabels[r.label] : r.label}
                             </text>
                           </g>
                         );
@@ -145,26 +174,38 @@ function Knowledge() {
                       aria-pressed={selected === t.id}
                     >
                       <span className="node-dot" />
-                      <strong>{t.label}</strong>
-                      <small>{t.english}</small>
+                      <strong>{en ? t.english : t.label}</strong>
+                      <small>{en ? "" : t.english}</small>
                     </button>
                   ))}
                 </div>
               </div>
               <div className="map-legend">
                 <span>
-                  <i /> 手作業のサンプル関係
+                  <i />
+                  {tx(
+                    "手作業のサンプル関係",
+                    "Manually authored sample relationships",
+                  )}
                 </span>
-                <span>線の意味・方向は右の詳細で確認できます</span>
+                <span>
+                  {tx(
+                    "線の意味・方向は右の詳細で確認できます",
+                    "Relationship meanings and directions appear in the details.",
+                  )}
+                </span>
               </div>
             </>
           ) : (
             <div className="tree-view">
               {[...new Set(filtered.map((t) => t.category))].map((category) => (
-                <div className="tree-group" key={category}>
+                <div
+                  className="tree-group"
+                  key={en ? categories[category] : category}
+                >
                   <h3>
                     <GitBranch size={17} />
-                    {category}
+                    {en ? categories[category] : category}
                   </h3>
                   {filtered
                     .filter((t) => t.category === category)
@@ -174,8 +215,8 @@ function Knowledge() {
                         className={selected === t.id ? "selected" : ""}
                         onClick={() => setSelected(t.id)}
                       >
-                        {t.label}
-                        <span>{t.english}</span>
+                        {en ? t.english : t.label}
+                        <span>{en ? "" : t.english}</span>
                         <ArrowRight size={16} />
                       </button>
                     ))}
@@ -186,11 +227,15 @@ function Knowledge() {
         </section>
         <aside className="panel topic-detail">
           <span className="eyebrow">TOPIC DETAILS</span>
-          <span className="pill">{topic.category}</span>
-          <h2>{topic.label}</h2>
-          <p className="english-label">{topic.english}</p>
-          <p>{topic.description}</p>
-          <p className="muted">{topic.definition}</p>
+          <span className="pill">
+            {en ? categories[topic.category] : topic.category}
+          </span>
+          <h2>{en ? topic.english : topic.label}</h2>
+          <p className="english-label">{en ? "" : topic.english}</p>
+
+          <p className="muted">
+            {en ? definitions[topic.id] : topic.definition}
+          </p>
           <button
             className="button secondary full"
             onClick={() =>
@@ -203,38 +248,55 @@ function Knowledge() {
             }
           >
             {saved ? <Check size={16} /> : <Bookmark size={16} />}{" "}
-            {saved ? "保存済み · クリックで解除" : "トピックを保存"}
+            {saved
+              ? tx("保存済み · クリックで解除", "Saved · Click to remove")
+              : tx("トピックを保存", "Save topic")}
           </button>
           <hr />
-          <h3>概念のつながり</h3>
+          <h3>{tx("概念のつながり", "Relationships")}</h3>
           {relations
             .filter((r) => r.from === selected || r.to === selected)
             .map((r) => (
               <div className="relation" key={r.from + r.to}>
                 <span>
-                  {getTopic(r.from).label} → {getTopic(r.to).label}
+                  {en ? getTopic(r.from).english : getTopic(r.from).label} →{" "}
+                  {en ? getTopic(r.to).english : getTopic(r.to).label}
                 </span>
-                <strong>{r.label}</strong>
-                <p>{r.explanation}</p>
+                <strong>{en ? relationLabels[r.label] : r.label}</strong>
+                <p>
+                  {en
+                    ? relationExplanations[
+                        r.from === "symmetry" ? r.to : r.from
+                      ]
+                    : r.explanation}
+                </p>
               </div>
             ))}
           {!relations.some((r) => r.from === selected || r.to === selected) && (
-            <p className="muted">このサンプルでは関係を未登録です。</p>
+            <p className="muted">
+              {tx(
+                "このサンプルでは関係を未登録です。",
+                "No relationships in this sample.",
+              )}
+            </p>
           )}
           <div className="stack">
             <Link className="button primary" href={`/learn?topic=${selected}`}>
-              Tutorで探索 <ArrowRight size={15} />
+              Tutor <ArrowRight size={15} />
             </Link>
             <Link
               className="button secondary"
               href={`/exercise?topic=${selected}`}
             >
-              この概念を演習する <ArrowRight size={15} />
+              {tx("演習", "Practice")}
+              <ArrowRight size={15} />
             </Link>
           </div>
           <p className="fine-print">
-            手作業で作成したサンプル地図。Organizer
-            AIによるノード生成・提案の承認は次段階です。
+            {tx(
+              "手作業で作成したサンプル地図。Organizer AIによるノード生成・提案の承認は次段階です。",
+              "Manually authored sample map. Organizer AI generation and proposal approval are planned.",
+            )}
           </p>
         </aside>
       </div>

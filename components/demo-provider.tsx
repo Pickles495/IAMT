@@ -46,6 +46,9 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     setState(structuredClone(emptyState));
     try {
       localStorage.removeItem(STORAGE_KEY);
+      Object.keys(localStorage)
+        .filter((k) => k === "iamt-board-v4" || k.startsWith("iamt-answer-"))
+        .forEach((k) => localStorage.removeItem(k));
     } catch {
       setStorageError(true);
     }

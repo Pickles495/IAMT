@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/components/locale";
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, BookOpen, Check, ChevronDown, X } from "lucide-react";
@@ -8,33 +9,34 @@ const suggestions = [
   {
     id: "reinforcement",
     kind: "REINFORCEMENT / 確認",
-    title: "条件から、もう一度。",
+    title: "定義と条件",
     text: "固定サンプル：定義と前提条件をBoardで見直す。",
     href: "/learn?topic=conics",
   },
   {
     id: "connection",
     kind: "CONNECTION / 接続",
-    title: "式と図形をつなぐ。",
+    title: "二次曲線と固有値",
     text: "固定サンプル：二次曲線と固有値の関係を地図で見る。",
     href: "/knowledge?topic=linear",
   },
   {
     id: "extension",
     kind: "EXTENSION / 発展",
-    title: "数の世界を広げる。",
+    title: "体の拡大",
     text: "固定サンプル：体の拡大という視点に進んでみる。",
     href: "/learn?topic=fields",
   },
   {
     id: "challenge",
     kind: "CHALLENGE / 挑戦",
-    title: "対称性を、説明する。",
+    title: "対称性の演習",
     text: "固定サンプル：証明・説明の演習を試す。",
     href: "/exercise?topic=symmetry",
   },
 ];
 export default function Progress() {
+  const { t: tx, en } = useLocale();
   const { state, setState } = useDemo();
   const metrics = summarize(state.attempts);
   const [sample, setSample] = useState(false);
@@ -45,45 +47,69 @@ export default function Progress() {
       <div className="page-heading">
         <div>
           <div className="eyebrow">A MOMENT TO REFLECT</div>
-          <h1>歩んだ道から、次の問いへ。</h1>
-          <p>記録を振り返る。解釈は問い直す。次の一歩は自由に選ぶ。</p>
+          <h1>{tx("学習記録", "Learning progress")}</h1>
+          <p>
+            {tx(
+              "演習履歴と保存したトピック",
+              "Attempt history and saved topics",
+            )}
+          </p>
         </div>
-        <span className="pill">このブラウザの記録</span>
+        <span className="pill">
+          {tx("このブラウザの記録", "Records in this browser")}
+        </span>
       </div>
       <div className="metric-grid">
         <Metric
-          label="記録された試行"
+          label={tx("記録された試行", "Recorded attempts")}
           value={String(metrics.total)}
-          note="修正後の再提出も1件として記録"
+          note={tx(
+            "修正後の再提出も1件として記録",
+            "Each resubmission is a separate attempt",
+          )}
         />
         <Metric
-          label="固定解との一致"
+          label={tx("固定解との一致", "Reference matches")}
           value={`${metrics.correct} / ${metrics.assessed}`}
-          note="判定可能・解答例未表示の試行のみ"
+          note={tx(
+            "判定可能・解答例未表示の試行のみ",
+            "Assessable attempts made before viewing the solution",
+          )}
         />
         <Metric
-          label="演習したトピック"
+          label={tx("演習したトピック", "Topics practiced")}
           value={String(metrics.topics)}
-          note="演習記録に含まれるトピック数"
+          note={tx(
+            "演習記録に含まれるトピック数",
+            "Distinct topics in attempt history",
+          )}
         />
         <Metric
-          label="保存したトピック"
+          label={tx("保存したトピック", "Saved topics")}
           value={String(state.saved.length)}
-          note="興味のある概念のブックマーク"
+          note={tx("興味のある概念のブックマーク", "Bookmarked concepts")}
         />
       </div>
       <section className="panel">
         <div className="panel-header">
-          <h2>演習の記録</h2>
-          <span className="subtle-tag">FACT / 観測された記録</span>
+          <h2>{tx("演習の記録", "Attempt history")}</h2>
+          <span className="subtle-tag">
+            {tx("FACT / 観測された記録", "FACT / Recorded activity")}
+          </span>
         </div>
         {state.attempts.length === 0 ? (
           <div className="empty-state">
             <BookOpen size={28} />
-            <h3>まだ、演習の記録はありません。</h3>
-            <p>最初の試行から、あなた自身の記録がここに残ります。</p>
+            <h3>{tx("まだ、演習の記録はありません。", "No attempts yet.")}</h3>
+            <p>
+              {tx(
+                "最初の試行から、あなた自身の記録がここに残ります。",
+                "Submitted answers appear here.",
+              )}
+            </p>
             <Link href="/exercise" className="button primary">
-              演習してみる <ArrowRight size={16} />
+              {tx("演習してみる", "Practice")}
+              <ArrowRight size={16} />
             </Link>
           </div>
         ) : (
@@ -95,33 +121,49 @@ export default function Progress() {
                     {String(state.attempts.length - i).padStart(2, "0")}
                   </span>
                   <span>
-                    <strong>{getTopic(a.topicId).label}</strong>
+                    <strong>
+                      {en
+                        ? getTopic(a.topicId).english
+                        : getTopic(a.topicId).label}
+                    </strong>
                     <small>
-                      {new Date(a.createdAt).toLocaleString("ja-JP")}
+                      {new Date(a.createdAt).toLocaleString(
+                        en ? "en-US" : "ja-JP",
+                      )}
                     </small>
                   </span>
                   <span className={`result-tag ${a.result}`}>
                     {a.result === "correct"
-                      ? "固定解と一致"
+                      ? tx("固定解と一致", "Matches reference")
                       : a.result === "incorrect"
-                        ? "要再検討"
-                        : "判定なし"}
+                        ? tx("要再検討", "Review answer")
+                        : tx("判定なし", "Not assessed")}
                   </span>
                   <ChevronDown size={16} />
                 </summary>
                 <div className="attempt-body">
-                  <h4>提出した解答</h4>
+                  <h4>{tx("提出した解答", "Submitted answer")}</h4>
                   <p className="preserve">{a.answer}</p>
-                  <p>{a.feedback}</p>
+                  <p>
+                    {en
+                      ? a.result === "inconclusive"
+                        ? "No automatic assessment. Review your reasoning."
+                        : "Limited fixed-answer comparison; not AI grading."
+                      : a.feedback}
+                  </p>
                   <small>
-                    ヒント {a.hintCount}件 · 解答例{" "}
-                    {a.revealed ? "表示後" : "未表示"}
+                    {tx("ヒント", "Hints")}
+                    {a.hintCount} · {tx("解答例", "Solution reference")}
+                    {a.revealed
+                      ? tx("表示後", "Viewed")
+                      : tx("未表示", "Not viewed")}
                   </small>
                   <Link
                     className="text-link"
                     href={`/learn?topic=${a.topicId}`}
                   >
-                    この概念をTutorで開く <ArrowRight size={14} />
+                    {tx("この概念をTutorで開く", "Tutor")}
+                    <ArrowRight size={14} />
                   </Link>
                 </div>
               </details>
@@ -132,16 +174,21 @@ export default function Progress() {
       <div className="two-column progress-lower">
         <section className="panel content-pad">
           <span className="eyebrow">LEARNING PATTERNS</span>
-          <h2>記録と解釈を、分けて考える。</h2>
+          <h2>{tx("学習傾向", "Learning patterns")}</h2>
           <p>
-            現在はAI分析を行っていません。記録数や正答率から、理解度や能力を判定しません。
+            {tx(
+              "現在はAI分析を行っていません。記録数や正答率から、理解度や能力を判定しません。",
+              "AI analysis is not connected. Counts and reference matches do not measure understanding or ability.",
+            )}
           </p>
           <p className="muted">
-            会話分析の設定：
-            {state.preferences.analytics ? "許可済み（分析は未接続）" : "オフ"}
+            {tx("会話分析の設定：", "Conversation analysis: ")}
+            {state.preferences.analytics
+              ? tx("許可済み（分析は未接続）", "Allowed (not connected)")
+              : tx("オフ", "Off")}
             。
             <Link className="inline-link" href="/settings">
-              設定を変更
+              {tx("設定を変更", "Settings")}
             </Link>
           </p>
           <button
@@ -149,38 +196,71 @@ export default function Progress() {
             onClick={() => setSample((v) => !v)}
             aria-expanded={sample}
           >
-            {sample ? "表示例を閉じる" : "AIフィードバックの表示例を見る"}
+            {sample
+              ? tx("表示例を閉じる", "Close example")
+              : tx("AIフィードバックの表示例を見る", "View sample AI feedback")}
           </button>
           {sample && (
             <div className="sample-insight">
               <span className="pill amber">
-                架空の例 · あなたの分析ではありません
+                {tx(
+                  "架空の例 · あなたの分析ではありません",
+                  "Fictional example · Not an analysis of you",
+                )}
               </span>
-              <h3>前提条件への関心があるかもしれません。</h3>
+              <h3>
+                {tx(
+                  "前提条件への関心があるかもしれません。",
+                  "You may be interested in assumptions.",
+                )}
+              </h3>
               <p>
-                <strong>観測の例：</strong>
-                定理の条件について、繰り返し質問している。
+                <strong>{tx("観測の例：", "Sample observation: ")}</strong>
+                {tx(
+                  "定理の条件について、繰り返し質問している。",
+                  "Repeated questions about theorem assumptions.",
+                )}
               </p>
               <p>
-                <strong>解釈の例：</strong>
-                今の学習では、成立条件に注目している可能性がある。
+                <strong>{tx("解釈の例：", "Sample interpretation: ")}</strong>
+                {tx(
+                  "今の学習では、成立条件に注目している可能性がある。",
+                  "The learner may be focusing on the conditions under which a result holds.",
+                )}
               </p>
               <details>
-                <summary>架空の根拠を表示</summary>
+                <summary>
+                  {tx("架空の根拠を表示", "Show fictional evidence")}
+                </summary>
                 <blockquote>
-                  「この定理で有限性はどこに使うの？」
+                  {tx(
+                    "「この定理で有限性はどこに使うの？」",
+                    "“Where is finiteness used in this theorem?”",
+                  )}
                   <br />
-                  「この条件を外すと反例はある？」
+                  {tx(
+                    "「この条件を外すと反例はある？」",
+                    "“Is there a counterexample without this condition?”",
+                  )}
                 </blockquote>
                 <p className="fine-print">
-                  表示設計用に作成した引用。実際の会話ではありません。
+                  {tx(
+                    "表示設計用に作成した引用。実際の会話ではありません。",
+                    "Quotes authored for this demo, not real conversations.",
+                  )}
                 </p>
               </details>
               <p className="fine-print">
-                根拠が少ない場合、この解釈は変わります。現在は実際の学習傾向を推論していません。
+                {tx(
+                  "根拠が少ない場合、この解釈は変わります。現在は実際の学習傾向を推論していません。",
+                  "Limited evidence can change this interpretation. No actual learning patterns are being inferred.",
+                )}
               </p>
               <label className="field-label">
-                解釈を訂正する（操作デモ）
+                {tx(
+                  "解釈を訂正する（操作デモ）",
+                  "Correct the interpretation (demo)",
+                )}
                 <textarea
                   value={correction}
                   onChange={(e) => {
@@ -189,7 +269,10 @@ export default function Progress() {
                   }}
                   rows={2}
                   maxLength={2000}
-                  placeholder="あなたの捉え方を書いてください"
+                  placeholder={tx(
+                    "あなたの捉え方を書いてください",
+                    "Enter your interpretation",
+                  )}
                 />
               </label>
               <button
@@ -200,11 +283,14 @@ export default function Progress() {
                 }}
               >
                 {saved ? <Check size={15} /> : null}
-                {saved ? "訂正を保存しました" : "訂正を保存"}
+                {saved
+                  ? tx("訂正を保存しました", "Correction saved")
+                  : tx("訂正を保存", "Save correction")}
               </button>
               {state.insightCorrection && (
                 <p className="correction">
-                  訂正後の表示（自己申告）：{state.insightCorrection}
+                  {tx("訂正後の表示（自己申告）：", "Your correction: ")}
+                  {state.insightCorrection}
                 </p>
               )}
             </div>
@@ -212,7 +298,7 @@ export default function Progress() {
         </section>
         <section className="soft-card">
           <span className="eyebrow">YOUR EXPLORATION</span>
-          <h2>気になる概念を、手元に。</h2>
+          <h2>{tx("保存したトピック", "Saved topics")}</h2>
           {state.saved.length ? (
             state.saved.map((id) => (
               <Link
@@ -220,23 +306,31 @@ export default function Progress() {
                 className="saved-topic"
                 href={`/knowledge?topic=${id}`}
               >
-                {getTopic(id).label}
+                {en ? getTopic(id).english : getTopic(id).label}
                 <ArrowRight size={16} />
               </Link>
             ))
           ) : (
             <p className="muted">
-              Knowledge MapやBoardからトピックを保存すると、ここに表示されます。
+              {tx(
+                "Knowledge Mapで保存したトピックがここに表示されます。",
+                "Topics saved in Knowledge Map appear here.",
+              )}
             </p>
           )}
           <Link href="/knowledge" className="text-link">
-            地図をひらく <ArrowRight size={15} />
+            Knowledge Map <ArrowRight size={15} />
           </Link>
         </section>
       </div>
       <div className="explore-heading">
-        <h2>ここから、どこへ向かう？</h2>
-        <span>固定の提案例 · 選ぶことも、閉じることも自由。</span>
+        <h2>{tx("関連ページ", "Related pages")}</h2>
+        <span>
+          {tx(
+            "固定の提案例 · 選ぶことも、閉じることも自由。",
+            "Sample links · Optional and dismissible",
+          )}
+        </span>
       </div>
       <div className="recommendation-grid">
         {suggestions
@@ -244,10 +338,16 @@ export default function Progress() {
           .map((s) => (
             <article className="explore-card" key={s.id}>
               <div className="row spread">
-                <span className="card-index">{s.kind}</span>
+                <span className="card-index">
+                  {en ? s.kind.split(" / ")[0] : s.kind}
+                </span>
                 <button
                   className="icon-button"
-                  aria-label={`${s.title}の提案を閉じる`}
+                  aria-label={
+                    en
+                      ? `Dismiss ${s.id}`
+                      : `${en ? { reinforcement: "Definitions", connection: "Conics and eigenvalues", extension: "Field extensions", challenge: "Symmetry practice" }[s.id] : s.title}の提案を閉じる`
+                  }
                   onClick={() =>
                     setState((v) => ({
                       ...v,
@@ -258,16 +358,29 @@ export default function Progress() {
                   <X size={15} />
                 </button>
               </div>
-              <h3>{s.title}</h3>
-              <p>{s.text}</p>
+              <h3>
+                {en
+                  ? {
+                      reinforcement: "Definitions",
+                      connection: "Conics and eigenvalues",
+                      extension: "Field extensions",
+                      challenge: "Symmetry practice",
+                    }[s.id]
+                  : s.title}
+              </h3>
+              <p>{en ? "Sample topic link" : s.text}</p>
               <details className="why">
-                <summary>提案の理由</summary>
+                <summary>{tx("提案の理由", "About this link")}</summary>
                 <p>
-                  4種類の探索方法を体験するための固定提案です。個人の記録に基づく推奨ではありません。
+                  {tx(
+                    "4種類の探索方法を体験するための固定提案です。個人の記録に基づく推奨ではありません。",
+                    "A fixed example, not a recommendation based on your records.",
+                  )}
                 </p>
               </details>
               <Link className="text-link" href={s.href}>
-                試してみる <ArrowRight size={15} />
+                {tx("試してみる", "Open")}
+                <ArrowRight size={15} />
               </Link>
             </article>
           ))}
@@ -277,7 +390,7 @@ export default function Progress() {
           className="button ghost"
           onClick={() => setState((s) => ({ ...s, dismissed: [] }))}
         >
-          閉じた固定提案を再表示
+          {tx("閉じた固定提案を再表示", "Restore dismissed links")}
         </button>
       )}
     </>

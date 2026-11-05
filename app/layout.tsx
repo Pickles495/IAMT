@@ -5,8 +5,8 @@ import "./globals.css";
 import { DemoProvider } from "@/components/demo-provider";
 import { Shell } from "@/components/shell";
 export const metadata: Metadata = {
-  title: "IAMT — 数学を、探究する。",
-  description: "自由な数学の探究を支える学習ワークスペース。操作できるV3デモ。",
+  title: "IAMT — Integrated AI Math Tutor",
+  description: "Integrated AI Math Tutor — V4 workspace demo.",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
