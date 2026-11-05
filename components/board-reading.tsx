@@ -1,7 +1,7 @@
 "use client";
 import { useId } from "react";
 import { ChevronRight } from "lucide-react";
-import type { Note } from "@/lib/board-elements";
+import { memoKinds, type Note } from "@/lib/board-elements";
 import { useLocale } from "./locale";
 import { MathText } from "./math";
 
@@ -12,6 +12,7 @@ export function BoardReading({
   reveal,
   select,
   editor,
+  attach,
 }: {
   root: Note;
   notes: Note[];
@@ -19,6 +20,7 @@ export function BoardReading({
   reveal: (step: number, parent: Note) => void;
   select: (id: string) => void;
   editor: (n: Note) => React.ReactNode;
+  attach: (n: Note) => React.ReactNode;
 }) {
   const { t } = useLocale();
   const prefix = useId();
@@ -72,7 +74,12 @@ export function BoardReading({
             }}
           >
             <ChevronRight size={16} aria-hidden="true" />
-            <span>{label}</span>
+            {note?.memoKind && note.memoKind !== "memo" && (
+              <small className="branch-kind">
+                {t(memoKinds[note.memoKind][0], memoKinds[note.memoKind][1])}
+              </small>
+            )}
+            <span className="branch-label">{label}</span>
           </button>
           <div id={id} hidden={!expanded} className="reading-detail">
             {expanded && note && (
@@ -85,7 +92,12 @@ export function BoardReading({
                   }}
                   onClick={() => select(note.id)}
                 >
-                  {editor(note) ?? body(note)}
+                  {editor(note) ?? (
+                    <>
+                      {body(note)}
+                      {attach(note)}
+                    </>
+                  )}
                 </div>
                 {branches(note, new Set([...path, note.id]))}
               </>
