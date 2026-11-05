@@ -14,7 +14,13 @@ test("personal board can apply a labelled example, undo and restore saved notes"
                 id: "topic",
                 name: "Fields",
                 revision: 1,
-                pv_boards: [{ id: boardId, title: "Board" }],
+                pv_boards: [
+                  {
+                    id: "22222222-2222-4222-8222-222222222222",
+                    title: "Draft",
+                  },
+                  { id: boardId, title: "Board" },
+                ],
                 pv_conversations: [],
               },
             ]
@@ -23,6 +29,7 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   );
   await page.route("**/api/pv1/board", (route) => {
     const b = route.request().postDataJSON();
+    expect(b.boardId).toBe(boardId);
     if (b.action === "save") {
       expect(b.revision).toBe(revision);
       elements = b.elements;
@@ -48,7 +55,11 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   await page.getByRole("button", { name: "ログイン", exact: true }).click();
   const open = () => page.getByRole("button", { name: "Board ↗" }).click();
   await page.getByLabel("学びたいこと").fill("Fields: what is an embedding?");
-  await expect(page.getByLabel("保存先のTopic")).toHaveValue("Fields");
+  await expect(page.getByLabel("保存先のTopic")).toHaveValue("topic");
+  await expect(
+    page.getByRole("button", { name: "質問からBoardを開く" }),
+  ).toBeDisabled();
+  await page.getByLabel("保存先のBoard").selectOption(boardId);
   await page.getByRole("button", { name: "質問からBoardを開く" }).click();
   await expect(page.locator("[data-note]")).toContainText(
     "Fields: what is an embedding?",

@@ -4,18 +4,7 @@ import type { Proposal } from "@/ai/board-tutor";
 import { useLocale } from "./locale";
 import { MathText } from "./math";
 import "./personal-board.css";
-type Note = {
-  id: string;
-  text: string;
-  tex?: string;
-  x: number;
-  y: number;
-  width?: number;
-  wide?: boolean;
-  collapsed?: boolean;
-  topic?: string;
-  parent?: string;
-};
+import { type Note, possibleParents, removeNote } from "@/lib/board-elements";
 type Turn = { question: string; reply: string; example: boolean };
 type Gesture = {
   id?: string;
@@ -254,6 +243,27 @@ export function PersonalBoard({
             </button>
             {active && (
               <>
+                {notes.length > 1 && (
+                  <label>
+                    {t("接続元", "Connect from")}{" "}
+                    <select
+                      aria-label={t("接続元のノート", "Parent note")}
+                      value={active.parent ?? ""}
+                      onChange={(e) =>
+                        patch(active.id, {
+                          parent: e.target.value || undefined,
+                        })
+                      }
+                    >
+                      <option value="">{t("なし", "None")}</option>
+                      {possibleParents(notes, active.id).map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {(n.text || n.tex || n.topic || n.id).slice(0, 48)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <button onClick={() => edit(!editing)}>
                   {t("編集", "Edit")}
                 </button>
@@ -266,7 +276,7 @@ export function PersonalBoard({
                 </button>
                 <button
                   onClick={() => {
-                    change(notes.filter((n) => n.id !== selected));
+                    change(removeNote(notes, selected));
                     select("");
                   }}
                 >

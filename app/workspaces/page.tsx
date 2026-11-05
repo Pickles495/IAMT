@@ -24,15 +24,34 @@ export default function Workspaces() {
   const [live, setLive] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [topicName, setTopicName] = useState<string | null>(null);
+  const [topicId, pickTopic] = useState<string | null>(null);
+  const [boardId, pickBoard] = useState("");
   const suggested = suggestedTopic(prompt, topics);
+  const matching = topics.filter(
+    (x) =>
+      x.name.normalize("NFKC").toLowerCase() ===
+      suggested.normalize("NFKC").toLowerCase(),
+  );
+  const destination =
+    topicId ??
+    (matching.length === 1 ? matching[0].id : matching.length ? "" : "new");
+  const chosen = topics.find((x) => x.id === destination);
+  const boards = chosen?.pv_boards ?? [];
+  const selectedBoard =
+    boards.find((b) => b.id === boardId) ??
+    (boards.length === 1 ? boards[0] : undefined);
+  function resetDestination() {
+    pickTopic(null);
+    pickBoard("");
+    setTopicName(null);
+  }
   async function startQuestion() {
     const name = (topicName ?? suggested).trim(),
       text = prompt.trim();
     if (!name || !text) return;
-    let current = topics.find(
-      (x) => x.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
-    );
-    if (!current) {
+    let current = chosen;
+    let target = selectedBoard;
+    if (destination === "new") {
       const [created] = await request(token, {
         action: "create",
         name,
@@ -41,10 +60,8 @@ export default function Workspaces() {
       const refreshed: Topic[] = await request(token);
       list(refreshed);
       current = refreshed.find((x) => x.id === created.id);
+      target = current?.pv_boards[0];
     }
-    const target =
-      current?.pv_boards.find((x) => x.title === "Board") ??
-      current?.pv_boards[0];
     if (!target || !current)
       throw Error(t("Boardを開けませんでした", "Could not open board"));
     openBoard({
@@ -53,7 +70,7 @@ export default function Workspaces() {
       prompt: text,
     });
     setPrompt("");
-    setTopicName(null);
+    resetDestination();
   }
   async function request(key: string, body?: object) {
     const r = await fetch("/api/pv1", {
@@ -132,7 +149,7 @@ export default function Workspaces() {
             onClick={() => {
               auth("");
               setPrompt("");
-              setTopicName(null);
+              resetDestination();
               list([]);
             }}
           >
@@ -160,22 +177,68 @@ export default function Workspaces() {
               />
             </label>
             {prompt.trim() && (
-              <label>
-                {t("保存先のTopic", "Topic for this question")}
-                <input
-                  required
-                  maxLength={200}
-                  disabled={busy}
-                  list="m2-topic-options"
-                  value={topicName ?? suggested}
-                  onChange={(e) => setTopicName(e.target.value)}
-                />
-                <datalist id="m2-topic-options">
-                  {topics.map((x) => (
-                    <option key={x.id} value={x.name} />
-                  ))}
-                </datalist>
-              </label>
+              <div className="destination-fields">
+                <label>
+                  {t("保存先のTopic", "Topic for this question")}
+                  <select
+                    value={destination}
+                    disabled={busy}
+                    required
+                    onChange={(e) => {
+                      pickTopic(e.target.value);
+                      pickBoard("");
+                    }}
+                  >
+                    <option value="" disabled>
+                      {t("Topicを選択", "Choose topic")}
+                    </option>
+                    {topics.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
+                        {topics.some((y) => y !== x && y.name === x.name)
+                          ? " · " + x.id.slice(-8)
+                          : ""}
+                      </option>
+                    ))}
+                    <option value="new">{t("新しいTopic", "New topic")}</option>
+                  </select>
+                </label>
+                {destination === "new" && (
+                  <label>
+                    {t("新しいTopic名", "New topic name")}
+                    <input
+                      required
+                      maxLength={200}
+                      disabled={busy}
+                      value={topicName ?? suggested}
+                      onChange={(e) => setTopicName(e.target.value)}
+                    />
+                  </label>
+                )}
+                {chosen && (
+                  <label>
+                    {t("保存先のBoard", "Destination board")}
+                    <select
+                      required
+                      disabled={busy}
+                      value={selectedBoard?.id ?? ""}
+                      onChange={(e) => pickBoard(e.target.value)}
+                    >
+                      <option disabled value="">
+                        {t("Boardを選択", "Choose board")}
+                      </option>
+                      {boards.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.title}
+                          {boards.some((x) => x !== b && x.title === b.title)
+                            ? " · " + b.id.slice(-8)
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
             )}
             {live && prompt.trim() && (
               <button
@@ -188,6 +251,17 @@ export default function Workspaces() {
                       question: prompt,
                       locale: en ? "en" : "ja",
                     });
+                    const matches = topics.filter(
+                      (x) => x.name === result.name,
+                    );
+                    pickTopic(
+                      matches.length === 1
+                        ? matches[0].id
+                        : matches.length
+                          ? ""
+                          : "new",
+                    );
+                    pickBoard("");
                     setTopicName(result.name);
                   })
                 }
@@ -198,57 +272,66 @@ export default function Workspaces() {
                 )}
               </button>
             )}
-            <button disabled={busy || !prompt.trim()}>
+            <button
+              disabled={
+                busy ||
+                !prompt.trim() ||
+                (destination !== "new" && !selectedBoard)
+              }
+            >
               {t("質問からBoardを開く", "Open board with question")}
             </button>
           </form>
-          <label>
-            {t("V4のJSONを選んで取り込む", "Import V4 JSON")}
-            <input
-              type="file"
-              accept=".json"
-              disabled={busy}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                void run(async () => {
-                  if (file.size > 2000000) throw Error("2 MB limit");
-                  const old = JSON.parse(await file.text());
-                  if (
-                    old.version !== 1 ||
-                    !Array.isArray(old.messages) ||
-                    !Array.isArray(old.attempts)
-                  )
-                    throw Error("Invalid V4 export");
-                  const cards = old.board ?? [];
-                  if (!Array.isArray(cards)) throw Error("Invalid board");
-                  if (
-                    !window.confirm(
-                      t(
-                        "Board要素 " +
-                          cards.length +
-                          "件、会話メッセージ " +
-                          old.messages.length +
-                          "件と履歴を個人DBに保存しますか？",
-                        "Import " +
-                          cards.length +
-                          " elements, " +
-                          old.messages.length +
-                          " messages and history into your account?",
-                      ),
+          <details className="workspace-import">
+            <summary>{t("データの取り込み", "Import data")}</summary>
+            <label>
+              {t("V4のJSONを選んで取り込む", "Import V4 JSON")}
+              <input
+                type="file"
+                accept=".json"
+                disabled={busy}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  void run(async () => {
+                    if (file.size > 2000000) throw Error("2 MB limit");
+                    const old = JSON.parse(await file.text());
+                    if (
+                      old.version !== 1 ||
+                      !Array.isArray(old.messages) ||
+                      !Array.isArray(old.attempts)
                     )
-                  )
-                    return;
-                  await request(token, {
-                    action: "import",
-                    payload: { cards, messages: old.messages, original: old },
+                      throw Error("Invalid V4 export");
+                    const cards = old.board ?? [];
+                    if (!Array.isArray(cards)) throw Error("Invalid board");
+                    if (
+                      !window.confirm(
+                        t(
+                          "Board要素 " +
+                            cards.length +
+                            "件、会話メッセージ " +
+                            old.messages.length +
+                            "件と履歴を個人DBに保存しますか？",
+                          "Import " +
+                            cards.length +
+                            " elements, " +
+                            old.messages.length +
+                            " messages and history into your account?",
+                        ),
+                      )
+                    )
+                      return;
+                    await request(token, {
+                      action: "import",
+                      payload: { cards, messages: old.messages, original: old },
+                    });
+                    list(await request(token));
+                    notice(t("取り込み済み", "Imported"));
                   });
-                  list(await request(token));
-                  notice(t("取り込み済み", "Imported"));
-                });
-              }}
-            />
-          </label>
+                }}
+              />
+            </label>
+          </details>
           {[null, ...topics].map((topic) => (
             <article key={topic?.id ?? "new"}>
               {topic && (
