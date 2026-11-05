@@ -80,6 +80,7 @@ export function PersonalBoard({
   function belongsToLesson(n: Note): boolean {
     const parent = n.parent ? byId.get(n.parent) : undefined;
     if (!parent) return false;
+    if (n.inlineMemo && parent.embeddingStep !== undefined) return true;
     if (n.embeddingStep === 1 || n.embeddingStep === 3)
       return parent.embeddingStep === 0;
     return (
@@ -157,7 +158,7 @@ export function PersonalBoard({
   function patch(id: string, v: Partial<Note>) {
     change(notes.map((n) => (n.id === id ? { ...n, ...v } : n)));
   }
-  function add(text = "", tex = "", anchor?: Note) {
+  function add(text = "", tex = "", anchor?: Note, inlineMemo?: boolean) {
     const id = crypto.randomUUID();
     change([
       ...notes,
@@ -168,6 +169,7 @@ export function PersonalBoard({
         x: anchor ? anchor.x + (anchor.width ?? 260) + 40 : (60 - pan.x) / zoom,
         y: anchor ? anchor.y : (60 - pan.y) / zoom,
         parent: anchor?.id,
+        inlineMemo,
       },
     ]);
     select(id);
@@ -740,7 +742,7 @@ export function PersonalBoard({
                 ))}
                 <button
                   className="context-action"
-                  onClick={() => add("", "", active)}
+                  onClick={() => add("", "", active, true)}
                 >
                   {t("ここにメモを添える", "Annotate this step")}
                 </button>

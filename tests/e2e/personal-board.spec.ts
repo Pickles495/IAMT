@@ -127,6 +127,9 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   await example.click();
   await example.click();
   await expect(page.locator(".m2-layout aside")).toContainText("元 1+√2");
+  await tutor.getByRole("button", { name: "ここにメモを添える" }).click();
+  await anchor.getByLabel("本文").fill("二つの像を比較した");
+  await anchor.getByRole("button", { name: "完了" }).click();
   await anchor.getByRole("button", { name: "補足を閉じる" }).click();
   await expect(example).toBeHidden();
   await expect(cards).toHaveCount(3);
@@ -135,6 +138,9 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   await page.getByRole("button", { name: "← 一覧" }).click();
   await open();
   await lesson.click();
+  await expect(
+    anchor.getByRole("button", { name: "二つの像を比較した" }),
+  ).toBeVisible();
   await expect(why).toHaveAttribute("aria-expanded", "false");
   await expect(example).toHaveAttribute("aria-expanded", "true");
   await why.click();
