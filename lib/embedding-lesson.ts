@@ -13,7 +13,7 @@ export const embeddingSteps = [
   },
   {
     role: "proof",
-    ja: "各元は a+b√2 と一意に書ける。どちらの符号でも右の対応は和と積を保ち、逆写像を持つ。両方の候補が実現する。",
+    ja: "各元は a+b√2 と一意に書ける。どちらの符号でも次の対応は和と積を保ち、逆写像を持つ。両方の候補が実現する。",
     en: "Each element has a unique expression a+b√2. Each sign gives a map preserving sums and products, with an inverse. Both candidates are realized.",
     tex: String.raw`a+b\sqrt2\longmapsto a\pm b\sqrt2\quad(a,b\in\mathbb Q)`,
   },
