@@ -177,12 +177,14 @@ test("topic events route to Structure and reject an unrelated response", async (
   assert.equal(job.role, "Structure");
   await assert.rejects(
     executeJob(job, {
+      mode: "MOCK",
       generate: async () => ({ role: "Structure", topicId: "b", text: "x" }),
     }),
   );
   assert.equal(
     (
       await executeJob(job, {
+        mode: "MOCK",
         generate: async () => ({ ...job, text: "代数" }),
       })
     ).text,

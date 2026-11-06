@@ -1,3 +1,4 @@
+import { aiExecutionPolicy } from "@/ai/execution-policy";
 import { inferTopic } from "@/ai/board-tutor";
 import { NextRequest } from "next/server";
 const error = (message: string, status: number) =>
@@ -30,7 +31,7 @@ async function handle(req: NextRequest) {
       data;
     const model = process.env.OPENAI_MODEL,
       apiKey = process.env.OPENAI_API_KEY;
-    const live = process.env.PV1_LIVE_TUTOR === "1" && !!model && !!apiKey;
+    const live = aiExecutionPolicy().liveEnabled;
     if (body.action === "suggestTopic") {
       if (!live || !model || !apiKey)
         return error("Live Tutor is disabled", 503);

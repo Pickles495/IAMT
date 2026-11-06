@@ -1,3 +1,4 @@
+import { requireLiveExecution } from "./execution-policy";
 export type Proposal = {
   action: "append" | "replace" | "none";
   text: string;
@@ -113,6 +114,7 @@ async function complete(
   instruction: string,
   maxTokens: number,
 ) {
+  requireLiveExecution();
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {

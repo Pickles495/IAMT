@@ -1,9 +1,12 @@
+import { requireLiveExecution } from "./execution-policy";
 export type Role = "Tutor" | "Structure" | "Question" | "Analyser";
 type Job = { topicId: string; role: Role; locale: string; eventId: string };
 export interface OpenAITransport {
+  mode: "MOCK" | "LIVE_GATED";
   generate(job: Job): Promise<unknown>;
 }
 export async function executeJob(job: Job, transport: OpenAITransport) {
+  if (transport.mode !== "MOCK") requireLiveExecution();
   const result = await transport.generate(job);
   if (
     !result ||

@@ -1,0 +1,7 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "feat/pv1-zero-cost-policy": false
+    }
+  }
+}
