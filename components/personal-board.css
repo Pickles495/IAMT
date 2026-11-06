@@ -1,0 +1,302 @@
+.m2 {
+  max-width: 100%;
+  color: var(--ink, #222);
+}
+.m2 header,
+.m2-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  padding: 0.5rem;
+}
+.m2 header h2 {
+  flex: 1;
+  font-size: 1.1rem;
+}
+.m2 button {
+  background: white;
+  border: 1px solid #bbb;
+  border-radius: 0.45rem;
+  padding: 0.4rem 0.65rem;
+  color: #222;
+}
+.m2 button:disabled {
+  opacity: 0.45;
+}
+.m2-layout {
+  display: flex;
+  min-height: 65vh;
+  border: 1px solid #ccc;
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+.m2-canvas-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.m2-layout aside {
+  width: min(34%, 23rem);
+  padding: 1rem;
+  overflow: auto;
+  max-height: 75vh;
+  border-left: 1px solid #ccc;
+  background: white;
+}
+.m2 aside small,
+.m2 aside textarea {
+  display: block;
+  margin: 0.55rem 0;
+}
+.m2-view {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-height: clamp(26rem, 64vh, 50rem);
+  touch-action: none;
+  background-color: #fafafa;
+  background-image: radial-gradient(#ccc 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.m2-world {
+  position: absolute;
+  transform-origin: 0 0;
+}
+.m2-world > svg {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+  color: #999;
+}
+.m2-world article {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: grab;
+  min-height: 3rem;
+}
+.m2-world article.chosen {
+  outline: 2px solid #333;
+}
+.m2 textarea {
+  width: 100%;
+  min-height: 3rem;
+  color: #222;
+  background: white;
+}
+.m2-world i {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 15px;
+  height: 15px;
+  border-right: 3px solid #777;
+  border-bottom: 3px solid #777;
+  cursor: ew-resize;
+}
+.m2-turn,
+.m2-offer {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #ddd;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 720px) {
+  .m2-layout {
+    display: block;
+  }
+  .m2-layout aside {
+    width: 100%;
+    max-height: 40vh;
+    border-left: 0;
+    border-top: 1px solid #ccc;
+  }
+}
+.pv-core form.m2-start {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 40rem;
+  margin: 1rem 0;
+  align-items: start;
+}
+.m2-start label {
+  display: grid;
+  gap: 0.25rem;
+}
+.m2-start textarea {
+  width: 100%;
+  min-height: 4rem;
+  padding: 0.65rem;
+  font: inherit;
+}
+.m2-start button {
+  justify-self: start;
+}
+
+.destination-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0.75rem;
+}
+.destination-fields select,
+.destination-fields input {
+  width: 100%;
+  min-width: 0;
+}
+.workspace-import {
+  margin: 1.25rem 0;
+  color: #444;
+}
+.workspace-import summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.workspace-import label {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+.m2-lesson {
+  margin: 0.75rem 0 1rem;
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--pv-line, #d4d4d4);
+}
+.m2-lesson summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.m2-lesson button {
+  margin: 0.5rem 0.4rem 0 0;
+}
+.m2-world article .math-display {
+  display: block;
+  overflow-x: auto;
+}
+.board-canvas-surface {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.m2-world article.reading-anchor {
+  z-index: 1;
+}
+.m2-world .inline-branches {
+  cursor: auto;
+  max-height: min(40vh, 24rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  white-space: normal;
+}
+.m2-world .branch-switch {
+  display: block;
+  margin-block: 0.4rem;
+  font-size: 0.85rem;
+  border-color: transparent;
+  text-decoration: underline;
+}
+.m2-tools select {
+  max-width: min(15rem, 60vw);
+}
+.reading-branch {
+  border-top: 1px solid #ddd;
+}
+.m2 .reading-branch > button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.625rem;
+  text-align: left;
+  min-height: 44px;
+  border: 0;
+  padding: 0.65rem 0.25rem;
+  font-weight: 600;
+}
+.reading-branch > button svg {
+  flex: none;
+  transition: transform 0.15s ease;
+}
+.reading-branch > button[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+.reading-detail {
+  margin: 0 0 0.5rem 0.5rem;
+  padding-left: 0.625rem;
+  border-left: 2px solid #ddd;
+}
+.reading-detail p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reading-branch > button svg {
+    transition: none;
+  }
+}
+.m2-world .note-fold {
+  float: right;
+  display: grid;
+  place-items: center;
+  min-height: 32px;
+  width: 32px;
+  margin: -0.35rem -0.45rem 0 0.35rem;
+  padding: 0;
+  border: 0;
+  color: #454545;
+}
+.note-fold[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+.note-summary {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.m2 .context-action {
+  margin: 0.25rem 0.3rem 0.25rem 0;
+}
+
+.m2 .memo-kind {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+.m2 .branch-kind {
+  flex: none;
+  font-weight: 500;
+  color: #555;
+}
+.m2 .branch-label {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.m2 .attach-at-source {
+  display: block;
+  clear: both;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.55rem;
+  color: #414141;
+  font-size: 0.85rem;
+}
+
+.m2 .reading-branch > button:focus-visible {
+  outline-offset: -3px;
+}
+.m2 .branch-label:has(.math-inline) {
+  overflow-x: auto;
+}
