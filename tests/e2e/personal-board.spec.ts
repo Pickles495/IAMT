@@ -107,10 +107,18 @@ test("personal board can apply a labelled example, undo and restore saved notes"
     note.getByText("準同型は積と和を保つ。", { exact: true }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: /^保存/ }).click();
+  await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  const savedView = await page.locator(".m2-world").getAttribute("style");
+  await page.screenshot({
+    path: test.info().outputPath("board-before-reopen.png"),
+  });
   await page.getByRole("button", { name: "← 一覧" }).click();
   await open();
-  await note.getByRole("button", { name: "補足を開く" }).click();
+  await expect(page.locator(".m2-world")).toHaveAttribute("style", savedView!);
   await expect(savedQuestion).toHaveAttribute("aria-expanded", "false");
+  await page.screenshot({
+    path: test.info().outputPath("board-after-reopen.png"),
+  });
   await savedQuestion.click();
   await expect(
     note.locator(".reading-detail .math-display").last(),
