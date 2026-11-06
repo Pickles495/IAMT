@@ -115,9 +115,15 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   await expect(
     note.locator(".reading-detail .math-display").last(),
   ).toBeVisible();
-  await expect(note.locator("[data-inline-note]").last()).toContainText(
-    "準同型",
-  );
+  const answer = note.getByRole("button", { name: /解答.*準同型/ });
+  await expect(answer).toBeVisible();
+  await expect(
+    note.getByText("準同型は積と和を保つ。", { exact: true }),
+  ).toHaveCount(1);
+  await note.locator("[data-inline-note]").last().press("Escape");
+  await expect(answer).toBeFocused();
+  await expect(answer).toHaveAttribute("aria-expanded", "false");
+  await expect(savedQuestion).toHaveAttribute("aria-expanded", "true");
   const lesson = page.getByRole("button", { name: "教材 · 体の埋め込み" });
   await lesson.click();
   const why = page.getByRole("button", { name: "なぜ候補は二つ？" });

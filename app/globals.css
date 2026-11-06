@@ -1,12 +1,12 @@
 :root {
-  --bg: #f7f8f4;
+  --bg: #fafafa;
   --paper: #fff;
-  --ink: #243d35;
-  --muted: #758079;
-  --green: #315f4a;
-  --accent: #e6eddf;
-  --line: #e3e7df;
-  --soft: #eff2e9;
+  --ink: #242424;
+  --muted: #606060;
+  --green: #323232;
+  --accent: #ebebeb;
+  --line: #dedede;
+  --soft: #f4f4f4;
   --serif:
     Georgia, "Yu Mincho", "Hiragino Mincho ProN", "Noto Sans JP Variable", serif;
 }
@@ -58,7 +58,7 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 summary:focus-visible {
-  outline: 3px solid #7c9c69;
+  outline: 3px solid #555;
   outline-offset: 4px;
 }
 h1,
@@ -105,8 +105,8 @@ svg {
   inset: 0 auto 0 0;
   width: 248px;
   padding: 34px 22px 20px;
-  background: #f0f2eb;
-  border-right: 1px solid #e1e5da;
+  background: var(--soft);
+  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   z-index: 10;
@@ -139,7 +139,7 @@ svg {
 .workspace-label {
   font-size: 9px;
   letter-spacing: 0.16em;
-  color: #7d887d;
+  color: var(--muted);
   margin: 49px 12px 16px;
 }
 .nav-item {
@@ -153,7 +153,7 @@ svg {
   transition: 0.18s;
 }
 .nav-item > svg {
-  color: #778577;
+  color: var(--muted);
 }
 .nav-item small {
   display: block;
@@ -163,21 +163,21 @@ svg {
   letter-spacing: 0.05em;
 }
 .nav-item.active {
-  background: #e1e8d8;
-  color: #244d39;
+  background: var(--accent);
+  color: var(--ink);
 }
 .nav-item.active svg {
-  color: #315f4a;
+  color: #323232;
 }
 .nav-dot {
   height: 5px;
   width: 5px;
   border-radius: 50%;
-  background: #496e44;
+  background: var(--ink);
   margin-left: auto;
 }
 .nav-item:hover {
-  background: #e5ebdf;
+  background: var(--accent);
 }
 .sidebar-note {
   margin: 42px 11px 18px;
@@ -326,7 +326,7 @@ main {
   background: #fff;
 }
 .button.secondary:hover {
-  background: #eff2e9;
+  background: #f4f4f4;
 }
 .button.ghost {
   color: var(--muted);
@@ -465,7 +465,7 @@ main {
 .icon-button:hover,
 .icon-button.selected {
   background: #edf2e8;
-  color: #315f4a;
+  color: #323232;
 }
 .board-body {
   padding: 27px 30px 24px;
@@ -1394,10 +1394,13 @@ footer span:last-child {
   position: fixed;
   top: -60px;
   left: 15px;
-  background: #315f4a;
+  background: #323232;
   color: #fff;
   padding: 10px 20px;
   z-index: 100;
+}
+.skip:not(:focus) {
+  clip-path: inset(50%);
 }
 .skip:focus {
   top: 10px;
