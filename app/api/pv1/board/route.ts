@@ -1,3 +1,4 @@
+import { aiExecutionPolicy } from "@/ai/execution-policy";
 import { exampleReply, generateReply } from "@/ai/board-tutor";
 import { validBoardElements } from "@/lib/board-elements";
 export async function POST(req: Request) {
@@ -60,11 +61,10 @@ export async function POST(req: Request) {
         turns.status,
       );
     const history = (await turns.json()).reverse();
-    const live =
-      process.env.PV1_LIVE_TUTOR === "1" &&
-      !!process.env.OPENAI_API_KEY &&
-      !!process.env.OPENAI_MODEL;
-    if (b.action === "open") return Response.json({ ...board, history, live });
+    const policy = aiExecutionPolicy();
+    const live = policy.liveEnabled;
+    if (b.action === "open")
+      return Response.json({ ...board, history, live, aiMode: policy.mode });
     if (
       b.action !== "ask" ||
       typeof b.question !== "string" ||
@@ -74,6 +74,8 @@ export async function POST(req: Request) {
       return err("Invalid question", 400);
     if (board.revision !== b.revision)
       return err("Board changed. Reopen to continue.", 409);
+    if (b.example && !policy.mockEnabled)
+      return err("Example Tutor is disabled", 503);
     if (!b.example && !live) return err("Live Tutor is disabled", 503);
     const selected = board.elements.find(
       (n: { id: string }) => n.id === b.selected,
