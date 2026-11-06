@@ -50,6 +50,7 @@ export function PersonalBoard({
     [live, setLive] = useState(false);
   const [pending, suggest] = useState<{
       p: Proposal;
+      revision: number;
       target?: Note;
       step?: number;
     } | null>(null),
@@ -279,7 +280,9 @@ export function PersonalBoard({
       history((h) => [...h, { question: q, reply: r.reply, example }]);
       question("");
       suggest(
-        r.proposal.action === "none" ? null : { p: r.proposal, target: active },
+        r.proposal.action === "none"
+          ? null
+          : { p: r.proposal, target: active, revision: rev },
       );
     });
   }
@@ -353,10 +356,11 @@ export function PersonalBoard({
     !reading.collapsed &&
     (active.id === reading.id || inlineIds.has(active.id));
   const stale =
-    pending?.target &&
-    (!notes.includes(pending.target) ||
+    pending &&
+    (pending.revision !== rev ||
+      (pending.target && !notes.includes(pending.target)) ||
       (pending.step !== undefined &&
-        (!contextLesson || pending.target.id !== selected)));
+        (!contextLesson || pending.target?.id !== selected)));
   return (
     <section className="m2">
       <header>
@@ -711,6 +715,31 @@ export function PersonalBoard({
             ))}
             {pending && (
               <div className="m2-offer">
+                <h4>
+                  {pending.step !== undefined
+                    ? t("補足を開く", "Reveal detail")
+                    : pending.p.action === "replace"
+                      ? t("ノートの置き換え", "Replace note")
+                      : t("ノートの追加", "Add note")}
+                </h4>
+                {pending.target && (
+                  <div>
+                    <small>
+                      {pending.p.action === "replace"
+                        ? t("変更前", "Before")
+                        : t("参照元", "Source note")}
+                    </small>
+                    <p>{pending.target.text}</p>
+                    {pending.target.tex && (
+                      <MathText tex={pending.target.tex} />
+                    )}
+                  </div>
+                )}
+                <small>
+                  {pending.p.action === "replace"
+                    ? t("変更後", "After")
+                    : t("内容", "Content")}
+                </small>
                 <p>{pending.p.text}</p>
                 {pending.p.tex && <MathText tex={pending.p.tex} />}
                 <button
@@ -778,6 +807,7 @@ export function PersonalBoard({
                           n.parent === active.id && n.embeddingStep === step,
                       );
                       suggest({
+                        revision: rev,
                         target: active,
                         step,
                         p: {
