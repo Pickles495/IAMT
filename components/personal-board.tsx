@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import type { Proposal } from "@/ai/board-tutor";
 import { useLocale } from "./locale";
 import { ChevronRight } from "lucide-react";
+import { parseBoardView } from "@/lib/board-view";
 import { BoardReading } from "./board-reading";
 import { MathText } from "./math";
 import "./personal-board.css";
@@ -62,6 +63,8 @@ export function PersonalBoard({
   const active = notes.find((n) => n.id === selected),
     dirty = rev > 0 && notes !== saved;
   const [readingId, read] = useState("");
+  const [viewReady, setViewReady] = useState(false);
+  const [viewError, setViewError] = useState(false);
   const reading = notes.find((n) => n.id === readingId);
   const inlineIds = new Set<string>();
   if (reading) {
@@ -133,7 +136,32 @@ export function PersonalBoard({
             undoStack([d.elements]);
             select(id);
             move({ x: 0, y: 40 - y });
-          } else setNotes(d.elements);
+          } else {
+            setNotes(d.elements);
+            try {
+              const view = parseBoardView(
+                localStorage.getItem("iamt-board-view:" + boardId),
+              );
+              if (view) {
+                move(view.pan);
+                scale(view.zoom);
+                select(
+                  d.elements.some((n: Note) => n.id === view.selected)
+                    ? view.selected
+                    : "",
+                );
+                read(
+                  d.elements.some((n: Note) => n.id === view.reading)
+                    ? view.reading
+                    : "",
+                );
+                show(view.tutor);
+              }
+            } catch {
+              setViewError(true);
+            }
+          }
+          setViewReady(true);
           setSaved(d.elements);
           revision(d.revision);
           history(d.history);
@@ -147,6 +175,20 @@ export function PersonalBoard({
       current = false;
     };
   }, [boardId, token, initialPrompt]);
+  useEffect(() => {
+    if (!viewReady) return;
+    const saveView = () => {
+      try {
+        localStorage.setItem(
+          "iamt-board-view:" + boardId,
+          JSON.stringify({ pan, zoom, selected, reading: readingId, tutor }),
+        );
+      } catch {
+        setViewError(true);
+      }
+    };
+    saveView();
+  }, [boardId, viewReady, pan, zoom, selected, readingId, tutor]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();
@@ -382,6 +424,14 @@ export function PersonalBoard({
           Tutor
         </button>
       </header>
+      {viewError && (
+        <p role="status">
+          {t(
+            "表示位置をこのブラウザに保存できません。Boardの保存は引き続き利用できます。",
+            "This browser could not save the view position. Board saving is still available.",
+          )}
+        </p>
+      )}
       <div className="m2-layout">
         <div className="m2-canvas-column">
           <div className="board-canvas-surface">
