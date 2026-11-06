@@ -228,8 +228,8 @@
   transform: rotate(90deg);
 }
 .reading-detail {
-  margin: 0 0 1rem 0.7rem;
-  padding-left: 1rem;
+  margin: 0 0 0.5rem 0.5rem;
+  padding-left: 0.625rem;
   border-left: 2px solid #ddd;
 }
 .reading-detail p {
@@ -279,9 +279,10 @@
   color: #555;
 }
 .m2 .branch-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
 }
 
 .m2 .attach-at-source {
@@ -291,4 +292,11 @@
   padding: 0.2rem 0.55rem;
   color: #414141;
   font-size: 0.85rem;
+}
+
+.m2 .reading-branch > button:focus-visible {
+  outline-offset: -3px;
+}
+.m2 .branch-label:has(.math-inline) {
+  overflow-x: auto;
 }
