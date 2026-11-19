@@ -33,3 +33,44 @@ export function parseBoardView(raw: string | null): BoardView | null {
     return null;
   }
 }
+
+type Point = { x: number; y: number };
+type Camera = { pan: Point; zoom: number };
+
+export function zoomBoardAt(
+  camera: Camera,
+  requested: number,
+  anchor: Point,
+): Camera {
+  const zoom = Math.max(0.35, Math.min(2.5, requested));
+  const ratio = zoom / camera.zoom;
+  return {
+    zoom,
+    pan: {
+      x: anchor.x - (anchor.x - camera.pan.x) * ratio,
+      y: anchor.y - (anchor.y - camera.pan.y) * ratio,
+    },
+  };
+}
+
+export function fitBoardView(
+  bounds: { x: number; y: number; width: number; height: number },
+  viewport: { width: number; height: number },
+): Camera {
+  const padding = 24;
+  const zoom = Math.max(
+    0.35,
+    Math.min(
+      1,
+      (viewport.width - padding * 2) / Math.max(1, bounds.width),
+      (viewport.height - padding * 2) / Math.max(1, bounds.height),
+    ),
+  );
+  return {
+    zoom,
+    pan: {
+      x: viewport.width / 2 - (bounds.x + bounds.width / 2) * zoom,
+      y: viewport.height / 2 - (bounds.y + bounds.height / 2) * zoom,
+    },
+  };
+}

@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import type { Proposal } from "@/ai/board-tutor";
 import { useLocale } from "./locale";
 import { ChevronRight } from "lucide-react";
-import { parseBoardView } from "@/lib/board-view";
+import { parseBoardView, zoomBoardAt, fitBoardView } from "@/lib/board-view";
 import { BoardReading } from "./board-reading";
 import { MathText } from "./math";
 import "./personal-board.css";
@@ -64,6 +64,41 @@ export function PersonalBoard({
     dirty = rev > 0 && notes !== saved;
   const [readingId, read] = useState("");
   const [viewReady, setViewReady] = useState(false);
+  function zoomTo(value: number) {
+    const el = viewport.current;
+    if (!el) return;
+    const next = zoomBoardAt({ pan, zoom }, value, {
+      x: el.clientWidth / 2,
+      y: el.clientHeight / 2,
+    });
+    move(next.pan);
+    scale(next.zoom);
+  }
+  function fitContent() {
+    const el = viewport.current;
+    if (!el) return;
+    const origin = el.getBoundingClientRect();
+    const boxes = [
+      ...el.querySelectorAll<HTMLElement>(".m2-world > [data-note]"),
+    ].map((note) => note.getBoundingClientRect());
+    if (!boxes.length) return;
+    const left = Math.min(...boxes.map((b) => b.left));
+    const top = Math.min(...boxes.map((b) => b.top));
+    const right = Math.max(...boxes.map((b) => b.right));
+    const bottom = Math.max(...boxes.map((b) => b.bottom));
+    const next = fitBoardView(
+      {
+        x: (left - origin.left - el.clientLeft - pan.x) / zoom,
+        y: (top - origin.top - el.clientTop - pan.y) / zoom,
+        width: (right - left) / zoom,
+        height: (bottom - top) / zoom,
+      },
+      { width: el.clientWidth, height: el.clientHeight },
+    );
+    move(next.pan);
+    scale(next.zoom);
+  }
+
   const [viewError, setViewError] = useState(false);
   const reading = notes.find((n) => n.id === readingId);
   const inlineIds = new Set<string>();
@@ -464,24 +499,23 @@ export function PersonalBoard({
               </button>
               <button
                 aria-label="Zoom out"
-                onClick={() => scale(Math.max(0.35, zoom - 0.15))}
+                disabled={zoom <= 0.35}
+                onClick={() => zoomTo(zoom - 0.15)}
               >
                 −
               </button>
-              <button
-                aria-label="Reset view"
-                onClick={() => {
-                  move({ x: 32, y: 32 });
-                  scale(1);
-                }}
-              >
+              <button aria-label="Reset zoom" onClick={() => zoomTo(1)}>
                 {Math.round(zoom * 100)}%
               </button>
               <button
                 aria-label="Zoom in"
-                onClick={() => scale(Math.min(2.5, zoom + 0.15))}
+                disabled={zoom >= 2.5}
+                onClick={() => zoomTo(zoom + 0.15)}
               >
                 +
+              </button>
+              <button disabled={!notes.length} onClick={fitContent}>
+                {t("全体表示", "Fit content")}
               </button>
               {active && (
                 <>

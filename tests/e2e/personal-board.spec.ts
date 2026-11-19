@@ -107,7 +107,36 @@ test("personal board can apply a labelled example, undo and restore saved notes"
     note.getByText("準同型は積と和を保つ。", { exact: true }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: /^保存/ }).click();
+
+  const worldCenter = () =>
+    page.locator(".m2-view").evaluate((el) => {
+      const matrix = new DOMMatrix(
+        getComputedStyle(el.querySelector(".m2-world")!).transform,
+      );
+      return {
+        x: (el.clientWidth / 2 - matrix.e) / matrix.a,
+        y: (el.clientHeight / 2 - matrix.f) / matrix.d,
+      };
+    });
+  const beforeZoom = await worldCenter();
   await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  const afterZoom = await worldCenter();
+  expect(afterZoom.x).toBeCloseTo(beforeZoom.x, 3);
+  expect(afterZoom.y).toBeCloseTo(beforeZoom.y, 3);
+  await page.getByRole("button", { name: "全体表示", exact: true }).click();
+  const surface = await page.locator(".m2-view").boundingBox();
+  for (const card of await cards.all()) {
+    const box = await card.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(surface!.x);
+    expect(box!.y).toBeGreaterThanOrEqual(surface!.y);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(
+      surface!.x + surface!.width + 1,
+    );
+    expect(box!.y + box!.height).toBeLessThanOrEqual(
+      surface!.y + surface!.height + 1,
+    );
+  }
+
   const savedView = await page.locator(".m2-world").getAttribute("style");
   await page.screenshot({
     path: test.info().outputPath("board-before-reopen.png"),
