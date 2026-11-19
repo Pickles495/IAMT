@@ -113,7 +113,7 @@ export function BoardWorkspace() {
     setInput("");
   }
   return (
-    <>
+    <section className="canvas-workspace demo-learning">
       <div className="v4-toolbar">
         <h1>{t("学習ワークスペース", "Learning workspace")}</h1>
         <select
@@ -338,6 +338,6 @@ export function BoardWorkspace() {
           </section>
         )}
       </div>
-    </>
+    </section>
   );
 }
