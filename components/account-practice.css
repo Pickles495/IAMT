@@ -1,0 +1,55 @@
+.account-practice header,
+.account-practice nav,
+.ap-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.account-practice header {
+  justify-content: space-between;
+}
+.account-practice button[aria-pressed="false"],
+.account-practice .ap-tools button:not(:first-child) {
+  background: white;
+  color: #222;
+  border: 1px solid #bbb;
+}
+.account-practice label {
+  display: grid;
+  gap: 0.35rem;
+  margin-block: 0.65rem;
+}
+.account-practice textarea {
+  width: 100%;
+  min-height: 4rem;
+  font: inherit;
+  padding: 0.7rem;
+}
+.account-practice fieldset {
+  border: 1px solid #bbb;
+  padding: 0.65rem;
+  min-width: 0;
+}
+.account-practice fieldset label {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+.account-practice details {
+  border-top: 1px solid #ccc;
+  padding: 0.75rem 0;
+}
+.account-practice summary {
+  cursor: pointer;
+}
+.account-practice form {
+  display: grid;
+  align-items: start;
+  gap: 0.4rem;
+}
+.account-practice article p,
+.account-practice details p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

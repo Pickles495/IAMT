@@ -72,17 +72,19 @@ function Problem({ id, index }: { id: TopicId; index: number }) {
     }
     setReady(true);
   }, [id]);
+  function saveDraft(seen: boolean) {
+    try {
+      localStorage.setItem(
+        "iamt-answer-" + id,
+        JSON.stringify({ version: 1, answer, hint, revealed: seen }),
+      );
+      setStorageError(false);
+    } catch {
+      setStorageError(true);
+    }
+  }
   useEffect(() => {
-    if (ready)
-      try {
-        localStorage.setItem(
-          "iamt-answer-" + id,
-          JSON.stringify({ version: 1, answer, hint, revealed }),
-        );
-        setStorageError(false);
-      } catch {
-        setStorageError(true);
-      }
+    if (ready) saveDraft(revealed);
   }, [answer, hint, revealed, id, ready]);
   const english: Record<TopicId, string> = {
     conics: "Find all real x values where the ellipse intersects y = 0.",
@@ -199,12 +201,24 @@ function Problem({ id, index }: { id: TopicId; index: number }) {
             : ex.hints.slice(0, hint).join(" ")}
         </p>
       )}
-      <details
-        onToggle={(e) => {
-          if (e.currentTarget.open) setRevealed(true);
-        }}
-      >
-        <summary>{t("解答例", "Solution reference")}</summary>
+      <details>
+        <summary
+          onClick={(event) => {
+            if (!ready) {
+              event.preventDefault();
+              return;
+            }
+            if (
+              !revealed &&
+              !event.currentTarget.parentElement?.hasAttribute("open")
+            ) {
+              saveDraft(true);
+              setRevealed(true);
+            }
+          }}
+        >
+          {t("解答例", "Solution reference")}
+        </summary>
         <p>
           {en
             ? id === "conics"

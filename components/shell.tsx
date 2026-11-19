@@ -45,6 +45,7 @@ function Frame({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
   const path = usePathname();
+  const personal = path === "/workspaces";
   const { ready, storageError } = useDemo();
   return (
     <div className={`app-shell ${collapsed ? "collapsed" : ""}`}>
@@ -79,7 +80,8 @@ function Frame({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="sidebar-bottom">
           <Link
-            className="nav-item"
+            className={`nav-item ${personal ? "active" : ""}`}
+            aria-current={personal ? "page" : undefined}
             href="/workspaces"
             aria-label={t("個人ワークスペース", "Personal workspace")}
           >
@@ -88,21 +90,24 @@ function Frame({ children }: { children: React.ReactNode }) {
           </Link>
           <Link
             href="/settings"
+            aria-current={path === "/settings" ? "page" : undefined}
             aria-label={t("設定", "Settings")}
             className={`nav-item ${path === "/settings" ? "active" : ""}`}
           >
             <Settings size={19} />
             <span>{t("設定", "Settings")}</span>
           </Link>
-          <div className="profile">
-            <span className="avatar">D</span>
-            <span>
-              {t("デモワークスペース", "Demo workspace")}
-              <small>
-                {t("このブラウザだけに保存", "Stored in this browser")}
-              </small>
-            </span>
-          </div>
+          {!personal && (
+            <div className="profile">
+              <span className="avatar">D</span>
+              <span>
+                {t("デモワークスペース", "Demo workspace")}
+                <small>
+                  {t("このブラウザだけに保存", "Stored in this browser")}
+                </small>
+              </span>
+            </div>
+          )}
         </div>
       </aside>
       <div className="main-shell">
@@ -133,21 +138,27 @@ function Frame({ children }: { children: React.ReactNode }) {
           <span>
             Workspace <span className="slash">/</span>{" "}
             <strong>
-              {nav.find((n) => n.href === path)?.en ?? "Settings"}
+              {personal
+                ? t("個人ワークスペース", "Personal workspace")
+                : (nav.find((n) => n.href === path)?.en ?? "Settings")}
             </strong>
           </span>
-          <span className="demo-tag">
-            <FlaskConical size={14} /> V4 Demo
-          </span>
-        </header>
-        <div className="demo-banner">
-          <span className="status-dot" />
-          {t(
-            "デモ：AI・アカウント・クラウド保存は未接続です。",
-            "Demo: AI, accounts and cloud storage are not connected.",
+          {!personal && (
+            <span className="demo-tag">
+              <FlaskConical size={14} /> V4 Demo
+            </span>
           )}
-        </div>
-        {storageError && (
+        </header>
+        {!personal && (
+          <div className="demo-banner">
+            <span className="status-dot" />
+            {t(
+              "デモ：AI・アカウント・クラウド保存は未接続です。",
+              "Demo: AI, accounts and cloud storage are not connected.",
+            )}
+          </div>
+        )}
+        {!personal && storageError && (
           <p role="alert" className="storage-warning">
             {t(
               "ブラウザ保存が利用できません。現在の記録はこの画面を閉じると失われます。",

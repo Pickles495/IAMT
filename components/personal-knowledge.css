@@ -1,0 +1,92 @@
+.private-knowledge {
+  margin: 1.25rem 0;
+  max-width: 55rem;
+  border: 1px solid #ccc;
+  border-radius: 0.6rem;
+  padding: clamp(0.7rem, 2vw, 1.3rem);
+  background: #fff;
+  color: #272727;
+}
+.private-knowledge header,
+.pk-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.private-knowledge header h2,
+.pk-detail h3 {
+  margin: 0;
+}
+.pv-core .private-knowledge button {
+  margin: 0.15rem;
+  background: #fff;
+  color: #222;
+  border: 1px solid #bbb;
+  padding: 0.4rem 0.6rem;
+}
+.pv-core .private-knowledge button[aria-pressed="true"] {
+  background: #272727;
+  color: white;
+}
+.pk-tree,
+.pk-detail,
+.pk-control {
+  border-top: 1px solid #ddd;
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+}
+.pk-tree summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.pk-tree ul {
+  border-left: 1px solid #aaa;
+  list-style: none;
+  margin: 0.4rem 0 0.7rem 0.5rem;
+  padding-left: 0.8rem;
+}
+.pk-tree small,
+.pk-detail small {
+  font-size: 0.77rem;
+}
+.pk-scroll {
+  overflow: auto;
+  max-height: 55vh;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  margin-top: 0.65rem;
+}
+.pk-graph {
+  transform-origin: 0 0;
+  position: relative;
+}
+.pk-graph strong,
+.pk-graph button,
+.pk-graph span {
+  position: absolute;
+  transform: translateY(-50%);
+  max-width: 150px;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.pk-graph strong {
+  width: 150px;
+  background: #262626;
+  color: white;
+  border-radius: 0.4rem;
+  padding: 0.65rem;
+}
+.pk-graph span {
+  background: #fafafa;
+  font-size: 0.8rem;
+}
+.pk-graph line {
+  stroke: #888;
+  stroke-width: 1.5;
+}
+.pv-core[hidden],
+.pv-core form[hidden] {
+  display: none;
+}

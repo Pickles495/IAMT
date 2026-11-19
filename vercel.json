@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "feat/pv1-zero-cost-policy": false,
+      "feat/board-view-memory": false,
+      "pv1/m2-learning": true
+    }
+  }
+}
