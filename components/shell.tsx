@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import "./canvas-shell.css";
 import { useState, useEffect } from "react";
 import { LocaleProvider, useLocale } from "./locale";
 import { usePathname } from "next/navigation";

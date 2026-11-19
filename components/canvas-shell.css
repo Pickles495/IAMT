@@ -1,0 +1,318 @@
+/* Edge-to-edge working surfaces; content and inspector scroll independently. */
+.app-shell:has(.canvas-workspace, .m2, .knowledge-open) {
+  --inspector-width: clamp(280px, 30vw, 380px);
+}
+.app-shell:has(.canvas-workspace, .m2, .knowledge-open) .main-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.app-shell:has(.canvas-workspace, .m2, .knowledge-open) .topbar {
+  flex: 0 0 48px;
+  min-height: 48px;
+  padding: 0 16px;
+}
+.app-shell:has(.canvas-workspace, .m2, .knowledge-open) .demo-banner {
+  flex: none;
+  padding: 5px 16px;
+}
+.app-shell:has(.canvas-workspace, .m2, .knowledge-open) main {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.canvas-workspace,
+.m2,
+.pv-core.knowledge-open,
+.private-knowledge {
+  min-width: 0;
+}
+.canvas-workspace,
+.m2,
+.pv-core.knowledge-open .private-knowledge {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--inspector-width);
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.canvas-workspace:not(:has(.v4-tutor, .topic-detail)),
+.m2:not(:has(.m2-layout aside)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.m2 > header,
+.demo-learning > .v4-toolbar,
+.private-knowledge > header,
+.knowledge-workspace > .map-toolbar {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  padding: 10px 16px;
+  border-bottom: 1px solid #dedede;
+  background: #fff;
+  gap: 8px;
+}
+.demo-learning > .v4-toolbar h1 {
+  font-size: 15px;
+  margin: 0;
+}
+.m2 > header h2 {
+  margin: 0;
+  font-size: 14px;
+}
+.m2 .m2-layout,
+.demo-learning .v4-board,
+.knowledge-workspace .map-layout {
+  display: contents;
+}
+.m2 .m2-canvas-column,
+.demo-learning .v4-board-scroll,
+.knowledge-workspace .map-canvas,
+.private-knowledge .pk-canvas {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: auto;
+}
+.m2 .board-canvas-surface {
+  min-height: 0;
+  height: 100%;
+}
+.m2 .m2-view {
+  min-height: 0;
+}
+.m2 .m2-tools {
+  padding: 8px 12px;
+  gap: 6px;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fff;
+  flex: none;
+}
+.m2 .m2-tools button {
+  font-size: 12px;
+}
+.m2 .m2-layout aside,
+.demo-learning .v4-tutor,
+.knowledge-workspace .topic-detail,
+.private-knowledge .pk-detail {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  position: static;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 20px;
+  border: 0;
+  border-left: 1px solid #d7d7d7;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fff;
+  resize: none;
+}
+.m2 .m2-layout aside h3,
+.private-knowledge .pk-detail h3 {
+  margin: 0 0 16px;
+}
+.demo-learning .v4-tutor {
+  display: flex;
+  flex-direction: column;
+}
+.demo-learning .v4-tutor header {
+  flex: none;
+}
+.demo-learning .v4-chat {
+  min-height: 0;
+}
+.demo-learning .v4-tutor form {
+  flex: none;
+}
+.knowledge-workspace > .page-heading {
+  display: none;
+}
+.knowledge-workspace .map-toolbar::before {
+  content: "Knowledge Map";
+  font-size: 14px;
+  font-weight: 600;
+}
+.knowledge-workspace .map-toolbar {
+  flex-wrap: wrap;
+}
+.knowledge-workspace .search-field {
+  min-width: 0;
+  flex: 1;
+}
+.knowledge-workspace .map-canvas {
+  display: flex;
+  flex-direction: column;
+}
+.knowledge-workspace .graph-scroll {
+  min-height: 0;
+  overflow: auto;
+}
+.knowledge-workspace .graph-stage {
+  flex-shrink: 0;
+}
+.knowledge-workspace .tree-view {
+  overflow: auto;
+}
+.pv-core.knowledge-open {
+  height: 100%;
+  max-width: none;
+}
+.pv-core.knowledge-open > :not(.private-knowledge) {
+  display: none;
+}
+.private-knowledge .pk-canvas {
+  display: flex;
+  flex-direction: column;
+  background: #fafafa;
+}
+.private-knowledge .pk-tree {
+  overflow: auto;
+  padding: 20px;
+  border: 0;
+  margin: 0;
+}
+.private-knowledge .pk-control {
+  padding: 12px;
+  margin: 0;
+  border: 0;
+}
+.private-knowledge .pk-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  border: 0;
+  margin: 0;
+  padding: 20px;
+}
+.private-knowledge .pk-detail select,
+.private-knowledge .pk-detail input {
+  max-width: 100%;
+}
+.canvas-workspace > [role="alert"],
+.m2 > [role="status"] {
+  grid-column: 1;
+  padding: 0 12px;
+  margin: 0;
+}
+@media (max-width: 1000px) {
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open) {
+    --inspector-width: clamp(180px, 34vw, 300px);
+  }
+  .m2 .m2-layout aside,
+  .demo-learning .v4-tutor,
+  .knowledge-workspace .topic-detail,
+  .private-knowledge .pk-detail {
+    padding: 12px;
+  }
+}
+@media (max-width: 700px) {
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open) {
+    --inspector-width: 42%;
+  }
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open) .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 56px;
+    height: 100dvh;
+    padding: 12px 6px;
+    border-right: 1px solid #ddd;
+  }
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open) .sidebar nav {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 10px;
+  }
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open)
+    .brand
+    > span:last-child,
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open)
+    .sidebar
+    .nav-item
+    > span {
+    display: none;
+  }
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open) .sidebar-bottom {
+    position: static;
+    margin-top: auto;
+  }
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open) .main-shell {
+    margin-left: 56px;
+    width: calc(100% - 56px);
+  }
+  .app-shell.collapsed:has(.canvas-workspace, .m2, .knowledge-open)
+    .main-shell {
+    margin-left: 0;
+    width: 100%;
+  }
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open) .topbar > span {
+    display: none;
+  }
+  .app-shell:has(.canvas-workspace, .m2, .knowledge-open) .demo-banner {
+    font-size: 9px;
+  }
+  .m2 > header,
+  .demo-learning > .v4-toolbar,
+  .private-knowledge > header,
+  .knowledge-workspace > .map-toolbar {
+    padding: 8px;
+  }
+  .m2 .m2-layout aside,
+  .demo-learning .v4-tutor,
+  .knowledge-workspace .topic-detail,
+  .private-knowledge .pk-detail {
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    padding: 8px;
+  }
+}
+.knowledge-workspace {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.knowledge-workspace > .page-heading {
+  display: flex;
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  padding: 12px 16px 0;
+  background: #fff;
+}
+.knowledge-workspace > .page-heading h1 {
+  font-size: 15px;
+  margin: 0;
+}
+.knowledge-workspace > .page-heading p,
+.knowledge-workspace > .page-heading .pill {
+  display: none;
+}
+.knowledge-workspace > .map-toolbar {
+  grid-row: 2;
+}
+.knowledge-workspace > .map-toolbar::before {
+  content: none;
+}
+.knowledge-workspace .map-canvas {
+  grid-row: 3;
+}

@@ -61,6 +61,13 @@ test("personal board can apply a labelled example, undo and restore saved notes"
   ).toBeDisabled();
   await page.getByLabel("保存先のBoard").selectOption(boardId);
   await page.getByRole("button", { name: "質問からBoardを開く" }).click();
+  const mainBox = (await page.locator("main").boundingBox())!;
+  const paneBox = (await page.locator(".m2-layout aside").boundingBox())!;
+  expect(
+    Math.abs(paneBox.x + paneBox.width - mainBox.x - mainBox.width),
+  ).toBeLessThan(2);
+  expect(Math.abs(paneBox.y - mainBox.y)).toBeLessThan(2);
+  expect(Math.abs(paneBox.height - mainBox.height)).toBeLessThan(2);
   await expect(page.locator("[data-note]")).toContainText(
     "Fields: what is an embedding?",
   );

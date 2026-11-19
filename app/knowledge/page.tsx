@@ -46,7 +46,7 @@ function Knowledge() {
   );
   const saved = state.saved.includes(selected);
   return (
-    <>
+    <section className="canvas-workspace knowledge-workspace">
       <div className="page-heading">
         <div>
           <div className="eyebrow">EVERY IDEA CONNECTS</div>
@@ -300,6 +300,6 @@ function Knowledge() {
           </p>
         </aside>
       </div>
-    </>
+    </section>
   );
 }
