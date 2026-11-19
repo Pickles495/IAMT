@@ -15,7 +15,9 @@ export function PersonalKnowledge({
   topics,
   token,
   open,
+  close,
 }: {
+  close: () => void;
   topics: WorkspaceTopic[];
   token: string;
   open: (id: string, title: string) => void;
@@ -102,6 +104,7 @@ export function PersonalKnowledge({
       aria-label={t("個人の知識構造", "Personal knowledge")}
     >
       <header>
+        <button onClick={close}>{t("← 一覧", "← Topics")}</button>
         <h2>{t("知識構造", "Knowledge")}</h2>
         <div>
           {(["tree", "map"] as const).map((v) => (
@@ -116,123 +119,135 @@ export function PersonalKnowledge({
           ))}
         </div>
       </header>
-      {view === "tree" ? (
-        <div className="pk-tree">
-          {[...new Set(nodes.map((n) => n.category))].map((c) => (
-            <details open key={c}>
-              <summary>{category(c)}</summary>
-              <ul>
-                {nodes
-                  .filter((n) => n.category === c)
-                  .map((n) => (
-                    <li key={n.id}>
-                      <button
-                        aria-pressed={focus.id === n.id}
-                        onClick={() => select(n.id)}
-                      >
-                        {label(n)}{" "}
-                        <small>
-                          {n.topic
-                            ? t("個人", "Saved")
-                            : t("分類項目", "Reference")}
-                        </small>
-                      </button>
-                    </li>
-                  ))}
-              </ul>
-            </details>
-          ))}
-        </div>
-      ) : (
-        <>
-          <div className="pk-control">
-            <label>
-              {t("中心のTopic", "Focus topic")}{" "}
-              <select value={focus.id} onChange={(e) => select(e.target.value)}>
-                {nodes.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {label(n)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {t("倍率", "Zoom")}{" "}
-              <select
-                value={zoom}
-                onChange={(e) => scale(Number(e.target.value))}
-              >
-                {[0.75, 1, 1.25, 1.5].map((v) => (
-                  <option key={v} value={v}>
-                    {v * 100}%
-                  </option>
-                ))}
-              </select>
-            </label>
+      <div className="pk-canvas">
+        {view === "tree" ? (
+          <div className="pk-tree">
+            {[...new Set(nodes.map((n) => n.category))].map((c) => (
+              <details open key={c}>
+                <summary>{category(c)}</summary>
+                <ul>
+                  {nodes
+                    .filter((n) => n.category === c)
+                    .map((n) => (
+                      <li key={n.id}>
+                        <button
+                          aria-pressed={focus.id === n.id}
+                          onClick={() => select(n.id)}
+                        >
+                          {label(n)}{" "}
+                          <small>
+                            {n.topic
+                              ? t("個人", "Saved")
+                              : t("分類項目", "Reference")}
+                          </small>
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              </details>
+            ))}
           </div>
-          <div
-            className="pk-scroll"
-            tabIndex={0}
-            aria-label={t("関係図", "Relationship graph")}
-          >
-            <div style={{ width: 560 * zoom, height: height * zoom }}>
-              <div
-                className="pk-graph"
-                style={{ width: 560, height, transform: "scale(" + zoom + ")" }}
-              >
-                <svg width="560" height={height} aria-hidden="true">
-                  {neighbors.map(({ node }, i) => (
-                    <line
-                      key={node.id + "-" + i}
-                      x1="162"
-                      y1={height / 2}
-                      x2="398"
-                      y2={((i + 0.5) * height) / rows}
-                    />
+        ) : (
+          <>
+            <div className="pk-control">
+              <label>
+                {t("中心のTopic", "Focus topic")}{" "}
+                <select
+                  value={focus.id}
+                  onChange={(e) => select(e.target.value)}
+                >
+                  {nodes.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {label(n)}
+                    </option>
                   ))}
-                </svg>
-                <strong style={{ left: 12, top: height / 2 }}>
-                  {label(focus)}
-                </strong>
-                {neighbors.map(({ node, label: kind, outgoing }, i) => (
-                  <div key={node.id + "-" + i}>
-                    <span
-                      style={{
-                        left: 204,
-                        top: (height / 2 + ((i + 0.5) * height) / rows) / 2,
-                      }}
-                    >
-                      {outgoing ? "→" : "←"}{" "}
-                      {kind === "related"
-                        ? t("個人・関連", "Personal · related")
-                        : kind === "requires"
-                          ? t("個人・前提", "Personal · requires")
-                          : en
-                            ? relationLabels[kind]
-                            : kind}
-                    </span>
-                    <button
-                      style={{ left: 396, top: ((i + 0.5) * height) / rows }}
-                      onClick={() => select(node.id)}
-                    >
-                      {label(node)}
-                    </button>
-                  </div>
-                ))}
+                </select>
+              </label>
+              <label>
+                {t("倍率", "Zoom")}{" "}
+                <select
+                  value={zoom}
+                  onChange={(e) => scale(Number(e.target.value))}
+                >
+                  {[0.75, 1, 1.25, 1.5].map((v) => (
+                    <option key={v} value={v}>
+                      {v * 100}%
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div
+              className="pk-scroll"
+              tabIndex={0}
+              aria-label={t("関係図", "Relationship graph")}
+            >
+              <div style={{ width: 560 * zoom, height: height * zoom }}>
+                <div
+                  className="pk-graph"
+                  style={{
+                    width: 560,
+                    height,
+                    transform: "scale(" + zoom + ")",
+                  }}
+                >
+                  <svg width="560" height={height} aria-hidden="true">
+                    {neighbors.map(({ node }, i) => (
+                      <line
+                        key={node.id + "-" + i}
+                        x1="162"
+                        y1={height / 2}
+                        x2="398"
+                        y2={((i + 0.5) * height) / rows}
+                      />
+                    ))}
+                  </svg>
+                  <strong style={{ left: 12, top: height / 2 }}>
+                    {label(focus)}
+                  </strong>
+                  {neighbors.map(({ node, label: kind, outgoing }, i) => (
+                    <div key={node.id + "-" + i}>
+                      <span
+                        style={{
+                          left: 204,
+                          top: (height / 2 + ((i + 0.5) * height) / rows) / 2,
+                        }}
+                      >
+                        {outgoing ? "→" : "←"}{" "}
+                        {kind === "related"
+                          ? t("個人・関連", "Personal · related")
+                          : kind === "requires"
+                            ? t("個人・前提", "Personal · requires")
+                            : en
+                              ? relationLabels[kind]
+                              : kind}
+                      </span>
+                      <button
+                        style={{ left: 396, top: ((i + 0.5) * height) / rows }}
+                        onClick={() => select(node.id)}
+                      >
+                        {label(node)}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-          {!neighbors.length && (
-            <p>
-              {t(
-                "登録された関係はまだありません。",
-                "No relationships recorded yet.",
-              )}
-            </p>
-          )}
-        </>
-      )}
-      <div className="pk-detail">
+            {!neighbors.length && (
+              <p>
+                {t(
+                  "登録された関係はまだありません。",
+                  "No relationships recorded yet.",
+                )}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+      <aside
+        className="pk-detail"
+        aria-label={t("Topicの説明", "Topic details")}
+      >
         <h3>{label(focus)}</h3>
         <small>
           {category(focus.category)} ·{" "}
@@ -344,7 +359,7 @@ export function PersonalKnowledge({
           </details>
         )}
         {problem && <p role="status">{problem}</p>}
-      </div>
+      </aside>
     </section>
   );
 }

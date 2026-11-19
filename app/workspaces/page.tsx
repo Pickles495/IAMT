@@ -117,7 +117,10 @@ export default function Workspaces() {
     <>
       {" "}
       {boardView}
-      <section hidden={!!boardView} className="pv-core">
+      <section
+        hidden={!!boardView}
+        className={`pv-core ${explore ? "knowledge-open" : ""}`}
+      >
         <h1>{t("個人ワークスペース", "Personal workspace")}</h1>
         {!token ? (
           <form
@@ -176,6 +179,7 @@ export default function Workspaces() {
             </button>
             {explore && (
               <PersonalKnowledge
+                close={() => setExplore(false)}
                 token={token}
                 topics={topics}
                 open={(id, title) => openBoard({ id, title })}
