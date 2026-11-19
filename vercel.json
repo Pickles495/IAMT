@@ -3,7 +3,7 @@
     "deploymentEnabled": {
       "feat/pv1-zero-cost-policy": false,
       "feat/board-view-memory": false,
-      "pv1/m2-learning": false
+      "pv1/m2-learning": true
     }
   }
 }
