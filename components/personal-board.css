@@ -109,13 +109,13 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   .m2-layout {
     display: block;
   }
   .m2-layout aside {
     width: 100%;
-    max-height: 40vh;
+    max-height: 32vh;
     border-left: 0;
     border-top: 1px solid #ccc;
   }
