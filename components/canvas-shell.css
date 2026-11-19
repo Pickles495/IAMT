@@ -316,3 +316,27 @@
 .knowledge-workspace .map-canvas {
   grid-row: 3;
 }
+
+/* Keep controls on one scrollable row so narrow screens retain canvas height. */
+@media (max-width: 700px) {
+  .demo-learning > .v4-toolbar,
+  .m2 > header,
+  .m2 .m2-tools,
+  .private-knowledge > header,
+  .knowledge-workspace > .map-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .demo-learning > .v4-toolbar > *,
+  .m2 > header > *,
+  .m2 .m2-tools > *,
+  .private-knowledge > header > *,
+  .knowledge-workspace > .map-toolbar > * {
+    flex-shrink: 0;
+  }
+  .knowledge-workspace .search-field {
+    width: 140px;
+  }
+}

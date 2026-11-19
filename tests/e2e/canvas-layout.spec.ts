@@ -13,6 +13,7 @@ test("learning and knowledge fill the workspace with a separate right inspector"
     const m = (await main.boundingBox())!;
     const board = (await page.locator(surface).boundingBox())!;
     const panel = (await page.locator(inspector).boundingBox())!;
+    expect(board.height).toBeGreaterThan(m.height * 0.65);
     expect(Math.abs(board.x - m.x)).toBeLessThan(2);
     expect(Math.abs(panel.x + panel.width - m.x - m.width)).toBeLessThan(2);
     expect(Math.abs(panel.y - m.y)).toBeLessThan(2);
